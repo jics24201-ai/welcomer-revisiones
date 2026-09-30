@@ -1111,12 +1111,15 @@ var API = (function () {
 
     semaforo: function (edificio) {
       return consultar('semaforo', { edificio: edificio }).then(function (d) {
-        var matriz = d.matriz || [];
+        // Defensivo: sin zonas comunes y ordenado por código de apartamento
+        var matriz = (d.matriz || []).filter(function (f) {
+          return String(f.apartamento || '').indexOf('ZZCC') === -1;
+        }).sort(function (a, b) { return cmp(a.apartamento, b.apartamento); });
         var acciones = [];
         if (matriz.length) {
           acciones = (matriz[0].celdas || []).map(function (c) {
             return { id: c.accion_id, numero: numeroDe(c.accion_id), nombre: c.accion, grupo: c.grupo };
-          });
+          }).sort(ordenAcciones);
         }
         var apartamentos = matriz.map(function (f) { return { id: f.apartamento_id, nombre: f.apartamento }; });
         var celdas = {};
@@ -1180,8 +1183,15 @@ var API = (function () {
 
     tabular: function (edificio, filtro) {
       return consultar('tabular', { edificio: edificio, filtro: filtro }).then(function (d) {
-        var filas = d.filas || [];
-        return { total: d.total_filas != null ? d.total_filas : filas.length, filas: filas };
+        // Defensivo: sin zonas comunes; orden por apartamento, grupo y Nº
+        var filas = (d.filas || []).filter(function (f) {
+          return String(f.apartamento || '').indexOf('ZZCC') === -1;
+        }).sort(function (a, b) {
+          if (a.apartamento !== b.apartamento) return cmp(a.apartamento, b.apartamento);
+          if (a.grupo !== b.grupo) return cmp(a.grupo, b.grupo);
+          return numeroDe(a.accion_id) - numeroDe(b.accion_id);
+        });
+        return { total: filas.length, filas: filas };
       });
     },
 
