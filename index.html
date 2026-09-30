@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Welcomer — Revisiones y Mantenimiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-alt: #F0F2F5;
+  --border: #E2E5EA;
+  --text: #1A1D23;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --primary: #2563EB;
+  --primary-light: #EFF6FF;
+  --primary-hover: #1D4ED8;
+  --green: #16A34A;
+  --green-bg: #DCFCE7;
+  --green-text: #15803D;
+  --yellow: #CA8A04;
+  --yellow-bg: #FEF9C3;
+  --yellow-text: #A16207;
+  --red: #DC2626;
+  --red-bg: #FEE2E2;
+  --red-text: #B91C1C;
+  --gray-bg: #F3F4F6;
+  --gray-text: #6B7280;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1117;
+    --surface: #1A1D27;
+    --surface-alt: #232733;
+    --border: #2E3340;
+    --text: #E8EAED;
+    --text-secondary: #9CA3AF;
+    --text-tertiary: #6B7280;
+    --primary: #60A5FA;
+    --primary-light: #1E3A5F;
+    --primary-hover: #93C5FD;
+    --green-bg: #14532D;
+    --green-text: #86EFAC;
+    --yellow-bg: #422006;
+    --yellow-text: #FDE68A;
+    --red-bg: #450A0A;
+    --red-text: #FCA5A5;
+    --gray-bg: #232733;
+    --shadow: 0 1px 3px rgba(0,0,0,.2);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1117;
+  --surface: #1A1D27;
+  --surface-alt: #232733;
+  --border: #2E3340;
+  --text: #E8EAED;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  --primary: #60A5FA;
+  --primary-light: #1E3A5F;
+  --primary-hover: #93C5FD;
+  --green-bg: #14532D;
+  --green-text: #86EFAC;
+  --yellow-bg: #422006;
+  --yellow-text: #FDE68A;
+  --red-bg: #450A0A;
+  --red-text: #FCA5A5;
+  --gray-bg: #232733;
+  --shadow: 0 1px 3px rgba(0,0,0,.2);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.field { margin-bottom: 20px; }
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color .15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #FFF;
+  width: 100%;
+  justify-content: center;
+  padding: 12px;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--surface-alt); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+
+/* ── APP SHELL ── */
+.app { display: none; min-height: 100vh; }
+.app.active { display: flex; }
+.sidebar {
+  width: 240px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.sidebar-logo .brand {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  letter-spacing: .3px;
+}
+.sidebar-logo .sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .1s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+.nav-item:hover { color: var(--text); background: var(--surface-alt); }
+.nav-item.active { color: var(--primary); background: var(--primary-light); font-weight: 600; }
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+.user-info { font-size: 13px; }
+.user-info .name { font-weight: 600; }
+.user-info .role { color: var(--text-tertiary); font-size: 12px; }
+.logout-btn {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--red);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+.logout-btn:hover { text-decoration: underline; }
+
+.main {
+  margin-left: 240px;
+  flex: 1;
+  padding: 28px 32px;
+  max-width: 1400px;
+}
+.page { display: none; }
+.page.active { display: block; }
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+/* ── DASHBOARD ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.stat-card .label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.stat-card .value {
+  font-family: 'DM Mono', monospace;
+  font-size: 32px;
+  font-weight: 500;
+}
+.stat-card .sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+.stat-card.green .value { color: var(--green); }
+.stat-card.yellow .value { color: var(--yellow); }
+.stat-card.red .value { color: var(--red); }
+.stat-card.neutral .value { color: var(--text-secondary); }
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── TABLES ── */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  box-shadow: var(--shadow);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-alt);
+  white-space: nowrap;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface-alt); }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge-green { background: var(--green-bg); color: var(--green-text); }
+.badge-yellow { background: var(--yellow-bg); color: var(--yellow-text); }
+.badge-red { background: var(--red-bg); color: var(--red-text); }
+.badge-gray { background: var(--gray-bg); color: var(--gray-text); }
+
+/* ── SEMÁFORO GRID ── */
+.semaforo-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.semaforo-controls select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--text);
+}
+.filter-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-family: inherit;
+  transition: all .1s;
+}
+.filter-btn.active, .filter-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.semaforo-table th { font-size: 11px; padding: 8px 6px; }
+.semaforo-table td { padding: 6px; text-align: center; }
+.semaforo-cell {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  cursor: pointer;
+  transition: transform .1s;
+}
+.semaforo-cell:hover { transform: scale(1.15); }
+.semaforo-cell.green { background: var(--green-bg); color: var(--green-text); }
+.semaforo-cell.yellow { background: var(--yellow-bg); color: var(--yellow-text); }
+.semaforo-cell.red { background: var(--red-bg); color: var(--red-text); }
+.semaforo-cell.empty { background: var(--gray-bg); color: var(--text-tertiary); }
+.semaforo-cell.hidden { opacity: .1; }
+
+.apt-link {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 500;
+}
+.apt-link:hover { text-decoration: underline; }
+
+/* ── FICHA APARTAMENTO ── */
+.ficha-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.ficha-back {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.ficha-back:hover { background: var(--surface-alt); }
+.ficha-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.ficha-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.ficha-section.full { grid-column: 1 / -1; }
+
+/* ── FORMS ── */
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 640px;
+  box-shadow: var(--shadow);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.form-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+}
+.photo-upload {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.photo-upload:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all .3s;
+  z-index: 1000;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── LEGEND ── */
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot {
+  width: 12px; height: 12px;
+  border-radius: 3px;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform .2s;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding: 16px; }
+  .mobile-header {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .hamburger {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text);
+    padding: 4px;
+  }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .ficha-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}
+@media (min-width: 769px) {
+  .mobile-header { display: none !important; }
+  .overlay { display: none !important; }
+}
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 99;
+}
+.overlay.show { display: block; }
+
+/* ── AJUSTES DEMO ── */
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+.app, .app.active { display: block; min-height: 100vh; }
+.main { min-width: 0; }
+.sidebar { padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
+.btn-primary { width: auto; padding: 10px 20px; }
+.btn:focus-visible, button:focus-visible, select:focus-visible, .apt-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.btn[disabled] { opacity: .6; cursor: progress; }
+.demo-tag {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.demo-tag strong { color: var(--text); font-weight: 600; display: block; }
+
+/* Semáforo */
+.semaforo-table { width: auto; }
+.semaforo-table th.col-accion { padding: 6px 2px; vertical-align: bottom; background: var(--surface-alt); }
+.col-accion .txt {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  max-height: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  margin: 0 auto;
+}
+.semaforo-table .sticky-col {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+  text-align: left;
+  padding: 6px 12px;
+  border-right: 1px solid var(--border);
+}
+.semaforo-table thead .sticky-col { background: var(--surface-alt); z-index: 2; vertical-align: bottom; }
+.semaforo-table tr:hover td.sticky-col { background: var(--surface-alt); }
+button.semaforo-cell { border: none; font-weight: 500; }
+.semaforo-cell.dim { opacity: .12; }
+.tabla-info { font-size: 12px; color: var(--text-tertiary); margin: -8px 0 12px; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 500;
+}
+.modal-backdrop.show { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 580px;
+  max-height: calc(100% - 20px);
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.modal-title { font-size: 18px; font-weight: 700; line-height: 1.3; }
+.modal-sub { font-size: 13px; color: var(--text-secondary); margin: 4px 0 18px; }
+.detalle { display: grid; grid-template-columns: 150px 1fr; gap: 8px 12px; font-size: 14px; }
+.detalle dt { color: var(--text-secondary); }
+.detalle dd { overflow-wrap: anywhere; }
+.explicacion {
+  background: var(--surface-alt);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin: 16px 0 0;
+}
+.nota-historico { font-size: 12px; color: var(--text-tertiary); margin-top: 12px; }
+.modal-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-top: 22px; }
+
+/* Ficha apartamento */
+.counter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+.grupo-titulo { font-size: 12px; color: var(--text-tertiary); font-weight: 600; margin: 16px 0 2px; }
+.grupo-titulo:first-child { margin-top: 0; }
+.accion-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 7px 4px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+}
+.accion-row:hover { background: var(--surface-alt); }
+.accion-row .semaforo-cell { width: 30px; height: 26px; cursor: inherit; }
+.accion-row .fecha { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.inc-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.inc-item:last-child { border-bottom: none; }
+.inc-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.inc-titulo { font-weight: 600; font-size: 14px; }
+.inc-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.inc-desc { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+.inc-badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.inc-actions { margin-top: 8px; }
+.empty-state { text-align: center; padding: 28px 12px; color: var(--text-secondary); font-size: 14px; }
+.empty-state .btn { margin-top: 12px; }
+.field .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+.form-error {
+  display: none;
+  background: var(--red-bg);
+  color: var(--red-text);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.form-error.show { display: block; }
+.prefill-note {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 18px;
+  display: none;
+}
+.prefill-note.show { display: block; }
+@media (max-width: 768px) {
+  .detalle { grid-template-columns: 1fr; gap: 2px; }
+  .detalle dd { margin-bottom: 8px; }
+  .btn-row { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="app" id="appShell">
+
+  <!-- Cabecera móvil -->
+  <div class="mobile-header">
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="Abrir menú">☰</button>
+    <span style="font-weight:600;font-size:14px;color:var(--primary)">WELCOMER</span>
+  </div>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Menú lateral -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">WELCOMER</div>
+      <div class="sub">Revisiones y Mantenimiento</div>
+    </div>
+    <button class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" data-page="semaforo" onclick="showPage('semaforo')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      Semáforo por edificio
+    </button>
+    <button class="nav-item" data-page="ficha" onclick="showPage('ficha')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Ficha apartamento
+    </button>
+    <button class="nav-item" data-page="tabular" onclick="showPage('tabular')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Vista tabular
+    </button>
+    <button class="nav-item" data-page="revision" onclick="abrirFormRevision(null, null, null)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Nueva revisión
+    </button>
+    <button class="nav-item" data-page="incidencia" onclick="abrirFormIncidencia(null, null)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Reportar incidencia
+    </button>
+    <div class="sidebar-footer">
+      <div class="demo-tag"><strong>Conectado</strong>Datos reales de Airtable vía n8n.</div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="pageDashboard">
+      <div class="page-title">Dashboard</div>
+      <div class="page-subtitle">Estado general del mantenimiento preventivo</div>
+      <div class="stats-grid" id="dashColores"></div>
+      <div class="stats-grid" id="dashExtra" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr))"></div>
+
+      <div class="section-title">Estado por edificio</div>
+      <div class="table-wrap" style="margin-bottom:28px">
+        <table>
+          <thead><tr><th>Edificio</th><th>Apartamentos</th><th>Al día</th><th>Próximas</th><th>Vencidas</th><th>Sin registro</th></tr></thead>
+          <tbody id="dashEdificios"></tbody>
+        </table>
+      </div>
+
+      <div id="dashIncBloque">
+      <div class="section-title">Incidencias recientes</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Apartamento</th><th>Edificio</th><th>Incidencia</th><th>Prioridad</th><th>Fecha</th><th>Estatus</th></tr></thead>
+          <tbody id="dashIncidencias"></tbody>
+        </table>
+      </div>
+      </div>
+    </div>
+
+    <!-- ══ SEMÁFORO ══ -->
+    <div class="page" id="pageSemaforo">
+      <div class="page-title">Semáforo por edificio</div>
+      <div class="page-subtitle">Pulsa una celda para ver la última revisión o registrar una nueva</div>
+      <div class="semaforo-controls">
+        <select id="edificioSelect" onchange="renderSemaforo()" aria-label="Edificio"></select>
+        <button class="filter-btn active" onclick="filterSemaforo('todos',this)">Todos</button>
+        <button class="filter-btn" onclick="filterSemaforo('rojo',this)">Vencidas</button>
+        <button class="filter-btn" onclick="filterSemaforo('amarillo',this)">Próximas</button>
+        <button class="filter-btn" onclick="filterSemaforo('verde',this)">Al día</button>
+        <button class="filter-btn" onclick="filterSemaforo('gris',this)">Sin registro</button>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green-bg);border:1px solid var(--green)"></div> Al día</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--yellow-bg);border:1px solid var(--yellow)"></div> Próxima a vencer</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red-bg);border:1px solid var(--red)"></div> Vencida o no realizada</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gray-bg);border:1px solid var(--text-tertiary)"></div> Sin registro</div>
+        <div class="legend-item">El número son los días desde la última revisión; P, W y B indican Pendiente, WIP y Bloqueado</div>
+      </div>
+      <div class="table-wrap" id="semaforoContainer"></div>
+    </div>
+
+    <!-- ══ FICHA APARTAMENTO ══ -->
+    <div class="page" id="pageFicha">
+      <div class="semaforo-controls">
+        <select id="fichaEdificio" onchange="llenarAptos('fichaEdificio','fichaApto')" aria-label="Edificio"></select>
+        <select id="fichaApto" onchange="if(this.value) openFicha(this.value)" aria-label="Apartamento"></select>
+      </div>
+      <div id="fichaContenido">
+        <div class="empty-state">Elige un edificio y un apartamento para ver su ficha.</div>
+      </div>
+    </div>
+
+    <!-- ══ TABULAR ══ -->
+    <div class="page" id="pageTabular">
+      <div class="page-title">Vista tabular</div>
+      <div class="page-subtitle">Estado de cada acción por apartamento, listo para exportar</div>
+      <div class="semaforo-controls">
+        <select id="tabEdificio" onchange="renderTabular()" aria-label="Edificio"></select>
+        <select id="tabFiltro" onchange="renderTabular()" aria-label="Estado">
+          <option value="todos">Todos los estados</option>
+          <option value="rojo">Vencidas</option>
+          <option value="amarillo">Próximas</option>
+          <option value="verde">Al día</option>
+          <option value="gris">Sin registro</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="descargarExcel()">Descargar Excel</button>
+      </div>
+      <div class="tabla-info" id="tabInfo"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Apartamento</th><th>Acción</th><th>Grupo</th><th>Estado</th><th>Días</th><th>Última revisión</th><th>Estatus</th><th>Responsable</th></tr></thead>
+          <tbody id="tabBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ NUEVA REVISIÓN ══ -->
+    <div class="page" id="pageRevision">
+      <div class="page-title">Registrar revisión</div>
+      <div class="page-subtitle">Cada revisión queda en el histórico; para actualizar un estado se registra una nueva</div>
+      <div class="form-card">
+        <div class="prefill-note" id="revPrefill"></div>
+        <div class="form-error" id="revError"></div>
+        <div class="form-row">
+          <div class="field">
+            <label for="revEdificio">Edificio</label>
+            <select id="revEdificio" onchange="llenarAptos('revEdificio','revApto')"></select>
+          </div>
+          <div class="field">
+            <label for="revApto">Apartamento</label>
+            <select id="revApto"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="revAccion">Acción</label>
+          <select id="revAccion"></select>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="revFecha">Fecha de ejecución</label>
+            <input type="date" id="revFecha">
+          </div>
+          <div class="field">
+            <label for="revEstatus">Estatus</label>
+            <select id="revEstatus"><option>Realizado</option><option>Pendiente</option><option>WIP</option><option>Bloqueado</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="revResponsable">Responsable</label>
+          <select id="revResponsable"><option>Interno</option><option>Externo</option><option>Proveedor</option><option>Seguro</option></select>
+        </div>
+        <div class="field">
+          <label for="revNotas">Notas</label>
+          <textarea id="revNotas" rows="3" placeholder="Observaciones opcionales"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="revGuardar" onclick="guardarRevision()">Guardar revisión</button>
+          <button class="btn btn-secondary" onclick="volverDesdeForm()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INCIDENCIA ══ -->
+    <div class="page" id="pageIncidencia">
+      <div class="page-title">Reportar incidencia</div>
+      <div class="page-subtitle">Averías o problemas encontrados fuera de las revisiones planificadas</div>
+      <div class="form-card">
+        <div class="prefill-note" id="incPrefill"></div>
+        <div class="form-error" id="incError"></div>
+        <div class="form-row">
+          <div class="field">
+            <label for="incEdificio">Edificio</label>
+            <select id="incEdificio" onchange="llenarAptos('incEdificio','incApto')"></select>
+          </div>
+          <div class="field">
+            <label for="incApto">Apartamento</label>
+            <select id="incApto"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="incTitulo">Título</label>
+          <input type="text" id="incTitulo" placeholder="Ej.: Goteo en el grifo del baño">
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="incPrioridad">Prioridad</label>
+            <select id="incPrioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
+          </div>
+          <div class="field">
+            <label for="incFecha">Fecha de reporte</label>
+            <input type="date" id="incFecha">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="incReportado">Reportado por</label>
+            <input type="text" id="incReportado" placeholder="Nombre o equipo">
+          </div>
+          <div class="field">
+            <label for="incResponsable">Responsable</label>
+            <select id="incResponsable"><option value="">Sin asignar</option><option>Interno</option><option>Externo</option><option>Proveedor</option><option>Seguro</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="incDescripcion">Descripción</label>
+          <textarea id="incDescripcion" rows="3" placeholder="Qué pasa, dónde y desde cuándo"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="incGuardar" onclick="guardarIncidencia()">Reportar incidencia</button>
+          <button class="btn btn-secondary" onclick="volverDesdeForm()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal: ficha de revisión (solo lectura) -->
+<div class="modal-backdrop" id="modalRevision" onclick="if(event.target===this) cerrarModal('modalRevision')">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mrTitulo">
+    <div class="modal-title" id="mrTitulo"></div>
+    <div class="modal-sub" id="mrSub"></div>
+    <dl class="detalle" id="mrDetalle"></dl>
+    <div class="explicacion" id="mrExplicacion"></div>
+    <div class="nota-historico">Las revisiones no se editan. Para actualizar el estado, registra una nueva.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarModal('modalRevision')">Cerrar</button>
+      <button class="btn btn-secondary" id="mrFicha">Ver ficha del apartamento</button>
+      <button class="btn btn-primary" id="mrNueva">Registrar nueva revisión</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: actualizar incidencia -->
+<div class="modal-backdrop" id="modalIncidencia" onclick="if(event.target===this) cerrarModal('modalIncidencia')">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="miTitulo">
+    <div class="modal-title" id="miTitulo"></div>
+    <div class="modal-sub" id="miSub"></div>
+    <div class="form-error" id="miError"></div>
+    <div class="form-row">
+      <div class="field">
+        <label for="miEstatus">Estatus</label>
+        <select id="miEstatus"><option>Abierta</option><option>En proceso</option><option>Resuelta</option><option>Cerrada</option></select>
+      </div>
+      <div class="field">
+        <label for="miResponsable">Responsable</label>
+        <select id="miResponsable"><option value="">Sin asignar</option><option>Interno</option><option>Externo</option><option>Proveedor</option><option>Seguro</option></select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="miFecha">Fecha de resolución</label>
+      <input type="date" id="miFecha">
+      <div class="hint">Si la marcas como resuelta o cerrada y la dejas vacía, se pone la de hoy.</div>
+    </div>
+    <div class="field">
+      <label for="miNotas">Notas de resolución</label>
+      <textarea id="miNotas" rows="3" placeholder="Qué se hizo para resolverla"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarModal('modalIncidencia')">Cancelar</button>
+      <button class="btn btn-primary" id="miGuardar" onclick="guardarActualizacionIncidencia()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CONFIGURACIÓN
+   Toda la comunicación con el backend pasa por el objeto API.
+   Al conectar con n8n solo se reescribe ese bloque; las
+   pantallas no cambian.
+   ════════════════════════════════════════════════════════════ */
+var CONFIG = {
+  modo: 'real',
+  apiBase: 'https://n8n.jics24201.dev/webhook',
+  rutas: {
+    revisiones: '/revisiones',
+    incidencias: '/incidencias',
+    actualizarIncidencia: '/incidencias-actualizar'
+  },
+  demoKey: ''   // si WF-02/03/07 exigen cabecera X-Demo-Key, poner aquí el valor
+};
+
+/* ════════ UTILIDADES ════════ */
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function isoDe(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function hoyISO() { return isoDe(new Date()); }
+function haceDias(n) { var d = new Date(); d.setDate(d.getDate() - n); return isoDe(d); }
+function diasDesde(iso) {
+  var p = iso.split('-');
+  var f = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  var h = new Date(); h.setHours(0, 0, 0, 0);
+  return Math.floor((h.getTime() - f.getTime()) / 86400000);
+}
+function fmtFecha(iso) {
+  if (!iso) return '—';
+  var p = iso.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+var CLASE_CELDA = { verde: 'green', amarillo: 'yellow', rojo: 'red', gris: 'empty' };
+var CLASE_BADGE = { verde: 'badge-green', amarillo: 'badge-yellow', rojo: 'badge-red', gris: 'badge-gray' };
+var TEXTO_COLOR = { verde: 'Al día', amarillo: 'Próxima', rojo: 'Vencida', gris: 'Sin registro' };
+var BADGE_INC = { 'Abierta': 'badge-red', 'En proceso': 'badge-yellow', 'Resuelta': 'badge-green', 'Cerrada': 'badge-gray' };
+var BADGE_PRIO = { 'Alta': 'badge-red', 'Media': 'badge-yellow', 'Baja': 'badge-gray' };
+var LETRA_ESTATUS = { 'Pendiente': 'P', 'WIP': 'W', 'Bloqueado': 'B' };
+
+function etiquetaCelda(c) {
+  if (c.color === 'gris') return '—';
+  if (c.estatus !== 'Realizado') return LETRA_ESTATUS[c.estatus] || '!';
+  return String(c.dias);
+}
+
+/* Misma lógica que el backend (WF-04): gris sin revisión; rojo si el
+   estatus no es Realizado; si es Realizado, según los umbrales. */
+function calcularColor(estado, accion) {
+  if (!estado || !estado.ultima_fecha) return { color: 'gris', dias: null };
+  var dias = diasDesde(estado.ultima_fecha);
+  var color;
+  if (estado.estatus !== 'Realizado') color = 'rojo';
+  else if (dias <= accion.verde_hasta) color = 'verde';
+  else if (dias >= accion.rojo_desde) color = 'rojo';
+  else color = 'amarillo';
+  return { color: color, dias: dias };
+}
+
+/* ════════ API ════════
+   Adaptador: llama a n8n y traduce cada respuesta al formato
+   que esperan las pantallas.
+     GET  /consultas?vista=dropdowns
+     GET  /consultas?vista=semaforo&edificio=...
+     GET  /consultas?vista=ficha&apartamento_id=...&accion_id=...
+     GET  /consultas?vista=ficha_apartamento&apartamento_id=...
+     GET  /consultas?vista=tabular&edificio=...&filtro=...
+     GET  /consultas?vista=dashboard
+     POST CONFIG.rutas.revisiones            (WF-02)
+     POST CONFIG.rutas.incidencias           (WF-03)
+     POST CONFIG.rutas.actualizarIncidencia  (WF-07)
+     GET  /exportar?edificio=...&filtro=...  (WF-05)
+*/
+var API = (function () {
+  // Catálogo en caché (se llena con dropdowns al arrancar)
+  var cat = { edificios: [], apartamentos: [], acciones: [], edPorId: {}, apPorId: {}, acPorId: {} };
+
+  function primero(v) { return Array.isArray(v) ? v[0] : v; }
+  function cmp(a, b) { return String(a || '').localeCompare(String(b || ''), 'es', { numeric: true }); }
+  function numeroDe(accionId) { var a = cat.acPorId[accionId]; return a ? a.numero : 999; }
+  function ordenAcciones(a, b) {
+    if (a.grupo !== b.grupo) return cmp(a.grupo, b.grupo);
+    return a.numero - b.numero;
+  }
+
+  function peticion(url, opciones) {
+    return fetch(url, opciones).then(function (res) {
+      return res.text().then(function (txt) {
+        var datos = null;
+        try { datos = txt ? JSON.parse(txt) : null; } catch (e) { datos = null; }
+        if (Array.isArray(datos)) datos = datos[0];
+        if (!res.ok) {
+          var msg = (datos && (datos.mensaje || datos.message || datos.error)) || ('Error ' + res.status + ' del servidor');
+          throw new Error(msg);
+        }
+        if (datos === null) throw new Error('Respuesta vacía o no válida del servidor');
+        if (datos.success === false) throw new Error(datos.mensaje || datos.message || 'Operación rechazada');
+        return datos.data || datos;
+      });
+    });
+  }
+  function consultar(vista, params) {
+    var url = CONFIG.apiBase + '/consultas?vista=' + encodeURIComponent(vista);
+    Object.keys(params || {}).forEach(function (k) {
+      url += '&' + k + '=' + encodeURIComponent(params[k]);
+    });
+    return peticion(url, { method: 'GET' });
+  }
+  function enviar(ruta, body) {
+    var headers = { 'Content-Type': 'application/json' };
+    if (CONFIG.demoKey) headers['X-Demo-Key'] = CONFIG.demoKey;
+    return peticion(CONFIG.apiBase + ruta, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+  }
+
+  return {
+    dropdowns: function () {
+      return consultar('dropdowns').then(function (d) {
+        var edificios = (d.edificios || []).map(function (e) {
+          return { id: e.id, nombre: e.nombre };
+        }).sort(function (a, b) { return cmp(a.nombre, b.nombre); });
+
+        var apartamentos = (d.apartamentos || []).map(function (a) {
+          var partes = String(a.etiqueta || '').split(' · ');
+          var resto = partes[1] || '';
+          var dir = resto.indexOf(' - ') > -1 ? resto.split(' - ').slice(1).join(' - ') : '';
+          return { id: a.id, nombre: partes[0] || a.id, edificio: a.edificio, direccion: dir, etiqueta: a.etiqueta };
+        }).sort(function (a, b) { return cmp(a.nombre, b.nombre); });
+
+        var acciones = (d.acciones || []).map(function (x) {
+          return { id: x.id, numero: Number(x.numero), nombre: x.accion, grupo: x.grupo, tipo: x.tipo, verde_hasta: null, rojo_desde: null };
+        }).sort(ordenAcciones);
+
+        cat = { edificios: edificios, apartamentos: apartamentos, acciones: acciones, edPorId: {}, apPorId: {}, acPorId: {} };
+        edificios.forEach(function (e) { cat.edPorId[e.id] = e; });
+        apartamentos.forEach(function (a) { cat.apPorId[a.id] = a; });
+        acciones.forEach(function (a) { cat.acPorId[a.id] = a; });
+
+        return { edificios: edificios, apartamentos: apartamentos, acciones: acciones };
+      });
+    },
+
+    semaforo: function (edificio) {
+      return consultar('semaforo', { edificio: edificio }).then(function (d) {
+        var matriz = d.matriz || [];
+        var acciones = [];
+        if (matriz.length) {
+          acciones = (matriz[0].celdas || []).map(function (c) {
+            return { id: c.accion_id, numero: numeroDe(c.accion_id), nombre: c.accion, grupo: c.grupo };
+          });
+        }
+        var apartamentos = matriz.map(function (f) { return { id: f.apartamento_id, nombre: f.apartamento }; });
+        var celdas = {};
+        matriz.forEach(function (f) {
+          acciones.forEach(function (ac) {
+            celdas[f.apartamento_id + '|' + ac.id] = { apartamento_id: f.apartamento_id, accion_id: ac.id, color: 'gris', dias: null, ultima_fecha: null, estatus: null, responsable: null, notas: null, revision_id: null };
+          });
+          (f.celdas || []).forEach(function (c) {
+            celdas[f.apartamento_id + '|' + c.accion_id] = {
+              apartamento_id: f.apartamento_id, accion_id: c.accion_id, color: c.color || 'gris', dias: c.dias,
+              ultima_fecha: c.ultima_fecha || null, estatus: c.estatus || null, responsable: null, notas: null,
+              revision_id: c.revision_id || null
+            };
+          });
+        });
+        return { edificio: d.edificio || edificio, apartamentos: apartamentos, acciones: acciones, celdas: celdas };
+      });
+    },
+
+    ficha: function (aptoId, accionId) {
+      return consultar('ficha', { apartamento_id: aptoId, accion_id: accionId }).then(function (d) {
+        var ap = cat.apPorId[aptoId] || {};
+        var u = d.umbrales || {};
+        return {
+          apartamento_id: aptoId, accion_id: accionId,
+          color: d.color || 'gris', dias: d.dias, ultima_fecha: d.ultima_fecha || null,
+          estatus: d.estatus || null, responsable: d.responsable || null, notas: d.notas || null,
+          revision_id: d.revision_id || null, fotos: d.fotos || null,
+          apartamento: { id: aptoId, nombre: ap.nombre || d.apartamento || '', edificio: ap.edificio || '', direccion: ap.direccion || '', etiqueta: ap.etiqueta || '' },
+          accion: { id: accionId, numero: numeroDe(accionId), nombre: d.accion, grupo: d.grupo, verde_hasta: Number(u.verde_hasta), rojo_desde: Number(u.rojo_desde) }
+        };
+      });
+    },
+
+    fichaApartamento: function (aptoId) {
+      return consultar('ficha_apartamento', { apartamento_id: aptoId }).then(function (d) {
+        var a = d.apartamento || {};
+        var enCache = cat.apPorId[aptoId] || {};
+        var edId = primero(a.edificio);
+        var edNombre = cat.edPorId[edId] ? cat.edPorId[edId].nombre : (enCache.edificio || edId || '');
+        var sem = d.semaforo || {};
+        var detalle = (sem.detalle || []).slice().sort(function (x, y) {
+          if (x.grupo !== y.grupo) return cmp(x.grupo, y.grupo);
+          return numeroDe(x.accion_id) - numeroDe(y.accion_id);
+        });
+        var inc = d.incidencias || {};
+        var incDetalle = (inc.detalle || []).map(function (i) {
+          return {
+            id: i.id, titulo: i.titulo || '', prioridad: i.prioridad || '', fecha_reporte: i.fecha_reporte || '',
+            reportado_por: i.reportado_por || '', estatus: i.estatus || '', responsable: i.responsable || '',
+            descripcion: i.descripcion || '', notas_resolucion: i.notas_resolucion || '', fecha_resolucion: i.fecha_resolucion || ''
+          };
+        });
+        return {
+          apartamento: { id: a.id || aptoId, nombre: a.nombre || enCache.nombre || '', edificio: edNombre, direccion: enCache.direccion || '', etiqueta: a.etiqueta || enCache.etiqueta || '' },
+          semaforo: { total_acciones: sem.total_acciones || detalle.length, conteo: sem.conteo || {}, detalle: detalle },
+          incidencias: { total: inc.total || incDetalle.length, abiertas: inc.abiertas || 0, detalle: incDetalle }
+        };
+      });
+    },
+
+    tabular: function (edificio, filtro) {
+      return consultar('tabular', { edificio: edificio, filtro: filtro }).then(function (d) {
+        var filas = d.filas || [];
+        return { total: d.total_filas != null ? d.total_filas : filas.length, filas: filas };
+      });
+    },
+
+    dashboard: function () {
+      return consultar('dashboard').then(function (d) {
+        var g = d.general || {};
+        return {
+          conteo: { verde: g.verde || 0, amarillo: g.amarillo || 0, rojo: g.rojo || 0, gris: g.gris || 0 },
+          // Sin datos reales en WF-04 todavía: las pantallas ocultan estos bloques
+          incidencias_abiertas: null, vencen_7_dias: null, revisiones_mes: null, incidencias_recientes: null,
+          edificios: (d.por_edificio || []).map(function (e) {
+            return { edificio: e.edificio, apartamentos: e.total_aptos, verde: e.verde || 0, amarillo: e.amarillo || 0, rojo: e.rojo || 0, gris: e.gris || 0 };
+          })
+        };
+      });
+    },
+
+    crearRevision: function (body) { return enviar(CONFIG.rutas.revisiones, body); },
+    crearIncidencia: function (body) { return enviar(CONFIG.rutas.incidencias, body); },
+    actualizarIncidencia: function (body) { return enviar(CONFIG.rutas.actualizarIncidencia, body); },
+
+    urlExportar: function (edificio, filtro) {
+      return CONFIG.apiBase + '/exportar?edificio=' + encodeURIComponent(edificio) + '&filtro=' + encodeURIComponent(filtro);
+    }
+  };
+})();
+
+/* ════════ ESTADO DE LA INTERFAZ ════════ */
+var CATALOGO = { edificios: [], apartamentos: [], acciones: [] };
+var filtroSemaforo = 'todos';
+var fichaActual = null;       // id del apartamento abierto en la ficha
+var paginaActual = 'dashboard';
+var volverA = null;           // a dónde regresar tras guardar un formulario
+var incidenciaEditando = null;
+
+function aptoPorId(id) { return CATALOGO.apartamentos.filter(function (a) { return a.id === id; })[0]; }
+function accionPorId(id) { return CATALOGO.acciones.filter(function (a) { return a.id === id; })[0]; }
+
+/* ════════ NAVEGACIÓN ════════ */
+var PAGINAS = { dashboard: 'pageDashboard', semaforo: 'pageSemaforo', ficha: 'pageFicha', tabular: 'pageTabular', revision: 'pageRevision', incidencia: 'pageIncidencia' };
+function showPage(id) {
+  paginaActual = id;
+  document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
+  document.getElementById(PAGINAS[id]).classList.add('active');
+  var nav = document.querySelector('[data-page="' + id + '"]');
+  if (nav) nav.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'semaforo') renderSemaforo();
+  if (id === 'tabular') renderTabular();
+  if (id === 'ficha' && fichaActual) openFicha(fichaActual);
+  closeSidebar();
+  window.scrollTo(0, 0);
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ════════ SELECTORES ════════ */
+function opcionesEdificios(selectId, conVacio) {
+  var s = document.getElementById(selectId);
+  var html = conVacio ? '<option value="">Elegir edificio</option>' : '';
+  CATALOGO.edificios.forEach(function (e) {
+    var n = CATALOGO.apartamentos.filter(function (a) { return a.edificio === e.nombre; }).length;
+    html += '<option value="' + esc(e.nombre) + '">' + esc(e.nombre) + ' (' + n + ')</option>';
+  });
+  s.innerHTML = html;
+}
+function llenarAptos(edSelectId, aptoSelectId, seleccionado) {
+  var ed = document.getElementById(edSelectId).value;
+  var html = '<option value="">Elegir apartamento</option>';
+  CATALOGO.apartamentos.filter(function (a) { return a.edificio === ed; }).forEach(function (a) {
+    html += '<option value="' + esc(a.id) + '"' + (a.id === seleccionado ? ' selected' : '') + '>' + esc(a.nombre) + '</option>';
+  });
+  document.getElementById(aptoSelectId).innerHTML = html;
+}
+function opcionesAcciones(selectId) {
+  var grupos = {};
+  var orden = [];
+  CATALOGO.acciones.forEach(function (a) {
+    if (!grupos[a.grupo]) { grupos[a.grupo] = []; orden.push(a.grupo); }
+    grupos[a.grupo].push(a);
+  });
+  var html = '<option value="">Elegir acción</option>';
+  orden.forEach(function (g) {
+    html += '<optgroup label="' + esc(g) + '">';
+    grupos[g].forEach(function (a) { html += '<option value="' + esc(a.id) + '">' + esc(a.numero + '. ' + a.nombre) + '</option>'; });
+    html += '</optgroup>';
+  });
+  document.getElementById(selectId).innerHTML = html;
+}
+
+/* ════════ DASHBOARD ════════ */
+function statCard(clase, etiqueta, valor, sub) {
+  return '<div class="stat-card ' + clase + '"><div class="label">' + etiqueta + '</div><div class="value">' + valor + '</div><div class="sub">' + sub + '</div></div>';
+}
+function renderDashboard() {
+  API.dashboard().then(function (d) {
+    document.getElementById('dashColores').innerHTML =
+      statCard('green', 'Al día', d.conteo.verde, 'revisiones en verde') +
+      statCard('yellow', 'Próximas a vencer', d.conteo.amarillo, 'revisiones en amarillo') +
+      statCard('red', 'Vencidas', d.conteo.rojo, 'vencidas o no realizadas') +
+      statCard('neutral', 'Sin registro', d.conteo.gris, 'nunca revisadas');
+    var extra = document.getElementById('dashExtra');
+    extra.style.display = d.incidencias_abiertas == null ? 'none' : '';
+    if (d.incidencias_abiertas != null) extra.innerHTML =
+      '<div class="stat-card"><div class="label">Incidencias abiertas</div><div class="value" style="color:var(--red)">' + d.incidencias_abiertas + '</div><div class="sub">abiertas o en proceso</div></div>' +
+      '<div class="stat-card"><div class="label">Pasan a rojo en 7 días</div><div class="value" style="color:var(--yellow)">' + d.vencen_7_dias + '</div><div class="sub">revisiones a programar</div></div>' +
+      '<div class="stat-card"><div class="label">Revisiones este mes</div><div class="value" style="color:var(--green)">' + d.revisiones_mes + '</div><div class="sub">registradas en el mes en curso</div></div>';
+
+    var filasEd = '';
+    d.edificios.forEach(function (e) {
+      filasEd += '<tr><td><span class="apt-link" tabindex="0" onclick="irASemaforo(\'' + esc(e.edificio) + '\')">' + esc(e.edificio) + '</span></td>' +
+        '<td>' + e.apartamentos + '</td>' +
+        '<td><span class="badge badge-green">' + e.verde + '</span></td>' +
+        '<td><span class="badge badge-yellow">' + e.amarillo + '</span></td>' +
+        '<td><span class="badge badge-red">' + e.rojo + '</span></td>' +
+        '<td><span class="badge badge-gray">' + e.gris + '</span></td></tr>';
+    });
+    document.getElementById('dashEdificios').innerHTML = filasEd;
+
+    document.getElementById('dashIncBloque').style.display = d.incidencias_recientes ? '' : 'none';
+    var filasInc = '';
+    (d.incidencias_recientes || []).forEach(function (i) {
+      filasInc += '<tr><td><span class="apt-link" tabindex="0" onclick="openFicha(\'' + esc(i.apartamento_id) + '\')">' + esc(i.apartamento) + '</span></td>' +
+        '<td>' + esc(i.edificio) + '</td><td>' + esc(i.titulo) + '</td>' +
+        '<td><span class="badge ' + (BADGE_PRIO[i.prioridad] || 'badge-gray') + '">' + esc(i.prioridad) + '</span></td>' +
+        '<td>' + fmtFecha(i.fecha_reporte) + '</td>' +
+        '<td><span class="badge ' + (BADGE_INC[i.estatus] || 'badge-gray') + '">' + esc(i.estatus) + '</span></td></tr>';
+    });
+    document.getElementById('dashIncidencias').innerHTML = filasInc || '<tr><td colspan="6" class="empty-state">No hay incidencias registradas.</td></tr>';
+  }).catch(mostrarErrorGeneral);
+}
+function irASemaforo(edificio) {
+  document.getElementById('edificioSelect').value = edificio;
+  showPage('semaforo');
+}
+
+/* ════════ SEMÁFORO ════════ */
+function renderSemaforo() {
+  var edificio = document.getElementById('edificioSelect').value;
+  API.semaforo(edificio).then(function (d) {
+    var html = '<table class="semaforo-table"><thead><tr><th class="sticky-col">Apto</th>';
+    d.acciones.forEach(function (ac) {
+      html += '<th class="col-accion" title="' + esc(ac.numero + '. ' + ac.nombre) + '"><div class="txt">' + esc(ac.nombre) + '</div></th>';
+    });
+    html += '</tr></thead><tbody>';
+    d.apartamentos.forEach(function (ap) {
+      html += '<tr><td class="sticky-col"><span class="apt-link" tabindex="0" onclick="openFicha(\'' + esc(ap.id) + '\')">' + esc(ap.nombre) + '</span></td>';
+      d.acciones.forEach(function (ac) {
+        var c = d.celdas[ap.id + '|' + ac.id];
+        var dim = filtroSemaforo !== 'todos' && c.color !== filtroSemaforo ? ' dim' : '';
+        var titulo = ap.nombre + ', ' + ac.nombre + ': ' + TEXTO_COLOR[c.color] + (c.ultima_fecha ? ' (' + fmtFecha(c.ultima_fecha) + ')' : '');
+        html += '<td><button class="semaforo-cell ' + CLASE_CELDA[c.color] + dim + '" title="' + esc(titulo) + '" aria-label="' + esc(titulo) + '" onclick="clickCelda(\'' + esc(ap.id) + '\',\'' + esc(ac.id) + '\',\'' + c.color + '\')">' + etiquetaCelda(c) + '</button></td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('semaforoContainer').innerHTML = html;
+  }).catch(mostrarErrorGeneral);
+}
+function filterSemaforo(filtro, btn) {
+  filtroSemaforo = filtro;
+  document.querySelectorAll('#pageSemaforo .filter-btn').forEach(function (b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderSemaforo();
+}
+function clickCelda(aptoId, accionId, color) {
+  if (color === 'gris') abrirFormRevision(aptoId, accionId, paginaActual);
+  else abrirFichaRevision(aptoId, accionId);
+}
+
+/* ════════ MODAL FICHA DE REVISIÓN ════════ */
+function explicarColor(c) {
+  var ac = c.accion;
+  if (c.estatus !== 'Realizado') return 'En rojo porque la última revisión está en estatus ' + c.estatus + ', sin importar la fecha.';
+  if (c.color === 'verde') return 'Al día. Pasa a amarillo en ' + (ac.verde_hasta - c.dias + 1) + ' días y a rojo en ' + (ac.rojo_desde - c.dias) + '.';
+  if (c.color === 'amarillo') return 'Próxima a vencer. Pasa a rojo en ' + (ac.rojo_desde - c.dias) + ' días.';
+  return 'Vencida desde hace ' + (c.dias - ac.rojo_desde) + ' días. El umbral de rojo es de ' + ac.rojo_desde + ' días.';
+}
+function abrirFichaRevision(aptoId, accionId) {
+  API.ficha(aptoId, accionId).then(function (c) {
+    document.getElementById('mrTitulo').textContent = c.accion.nombre;
+    document.getElementById('mrSub').textContent = c.apartamento.nombre + ', ' + c.apartamento.edificio;
+    document.getElementById('mrDetalle').innerHTML =
+      '<dt>Estado</dt><dd><span class="badge ' + CLASE_BADGE[c.color] + '">' + TEXTO_COLOR[c.color] + '</span></dd>' +
+      '<dt>Última revisión</dt><dd>' + fmtFecha(c.ultima_fecha) + '</dd>' +
+      '<dt>Días transcurridos</dt><dd>' + c.dias + '</dd>' +
+      '<dt>Estatus</dt><dd>' + esc(c.estatus) + '</dd>' +
+      '<dt>Responsable</dt><dd>' + esc(c.responsable || '—') + '</dd>' +
+      '<dt>Notas</dt><dd>' + esc(c.notas || '—') + '</dd>' +
+      '<dt>Umbrales</dt><dd>Verde hasta ' + c.accion.verde_hasta + ' días, rojo desde ' + c.accion.rojo_desde + '</dd>';
+    document.getElementById('mrExplicacion').textContent = explicarColor(c);
+    document.getElementById('mrNueva').onclick = function () { cerrarModal('modalRevision'); abrirFormRevision(aptoId, accionId, paginaActual); };
+    var btnFicha = document.getElementById('mrFicha');
+    btnFicha.style.display = paginaActual === 'ficha' ? 'none' : '';
+    btnFicha.onclick = function () { cerrarModal('modalRevision'); openFicha(aptoId); };
+    abrirModal('modalRevision');
+  }).catch(mostrarErrorGeneral);
+}
+function abrirModal(id) {
+  document.getElementById(id).classList.add('show');
+  var foco = document.querySelector('#' + id + ' .btn-primary');
+  if (foco) foco.focus();
+}
+function cerrarModal(id) { document.getElementById(id).classList.remove('show'); }
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { cerrarModal('modalRevision'); cerrarModal('modalIncidencia'); }
+});
+
+/* ════════ FICHA APARTAMENTO ════════ */
+function openFicha(aptoId) {
+  fichaActual = aptoId;
+  var ap = aptoPorId(aptoId);
+  if (ap) {
+    document.getElementById('fichaEdificio').value = ap.edificio;
+    llenarAptos('fichaEdificio', 'fichaApto', aptoId);
+  }
+  if (paginaActual !== 'ficha') { showPage('ficha'); return; }
+  API.fichaApartamento(aptoId).then(function (d) {
+    var a = d.apartamento;
+    var visibles = d.semaforo.detalle.filter(function (s) { return s.tipo !== 'No aplica'; });
+    var conteo = { verde: 0, amarillo: 0, rojo: 0, gris: 0 };
+    visibles.forEach(function (s) { conteo[s.color]++; });
+
+    var html = '<div class="ficha-header"><div>' +
+      '<div class="page-title">' + esc(a.nombre) + '</div>' +
+      '<div class="page-subtitle" style="margin-bottom:0">' + esc(a.edificio) + (a.direccion ? ', ' + esc(a.direccion) : '') + '</div>' +
+      '</div></div>';
+    html += '<div class="counter-row">' +
+      '<span class="badge badge-green">' + conteo.verde + ' al día</span>' +
+      '<span class="badge badge-yellow">' + conteo.amarillo + ' próximas</span>' +
+      '<span class="badge badge-red">' + conteo.rojo + ' vencidas</span>' +
+      '<span class="badge badge-gray">' + conteo.gris + ' sin registro</span>' +
+      '<div class="btn-row">' +
+      '<button class="btn btn-secondary btn-sm" onclick="abrirFormIncidencia(\'' + esc(a.id) + '\', \'ficha\')">Reportar incidencia</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="abrirFormRevision(\'' + esc(a.id) + '\', null, \'ficha\')">Registrar revisión</button>' +
+      '</div></div>';
+
+    // Semáforo agrupado
+    var semHtml = '';
+    var grupoPrevio = null;
+    visibles.forEach(function (s) {
+      if (s.grupo !== grupoPrevio) { semHtml += '<div class="grupo-titulo">' + esc(s.grupo) + '</div>'; grupoPrevio = s.grupo; }
+      var fecha = s.ultima_fecha ? fmtFecha(s.ultima_fecha) + (s.estatus !== 'Realizado' ? ', ' + s.estatus : '') : 'Sin registro';
+      semHtml += '<button class="accion-row" onclick="clickCelda(\'' + esc(a.id) + '\',\'' + esc(s.accion_id) + '\',\'' + s.color + '\')">' +
+        '<span class="semaforo-cell ' + CLASE_CELDA[s.color] + '">' + etiquetaCelda(s) + '</span>' +
+        '<span>' + esc(s.accion) + '</span><span class="fecha">' + esc(fecha) + '</span></button>';
+    });
+
+    // Incidencias
+    var incHtml = '';
+    var lista = d.incidencias.detalle.slice().sort(function (x, y) { return x.fecha_reporte < y.fecha_reporte ? 1 : -1; });
+    lista.forEach(function (i) {
+      incHtml += '<div class="inc-item"><div class="inc-top"><div>' +
+        '<div class="inc-titulo">' + esc(i.titulo) + '</div>' +
+        '<div class="inc-meta">' + fmtFecha(i.fecha_reporte) + ', ' + esc(i.reportado_por) + (i.responsable ? '. Responsable: ' + esc(i.responsable) : '') + '</div>' +
+        '</div><div class="inc-badges">' +
+        '<span class="badge ' + (BADGE_PRIO[i.prioridad] || 'badge-gray') + '">' + esc(i.prioridad) + '</span>' +
+        '<span class="badge ' + (BADGE_INC[i.estatus] || 'badge-gray') + '">' + esc(i.estatus) + '</span>' +
+        '</div></div>' +
+        (i.descripcion ? '<div class="inc-desc">' + esc(i.descripcion) + '</div>' : '') +
+        ((i.notas_resolucion || i.fecha_resolucion) ? '<div class="inc-desc"><strong>Resolución' + (i.fecha_resolucion ? ' (' + fmtFecha(i.fecha_resolucion) + ')' : '') + ':</strong> ' + esc(i.notas_resolucion || 'sin notas') + '</div>' : '') +
+        '<div class="inc-actions"><button class="btn btn-secondary btn-sm" onclick="abrirActualizarIncidencia(\'' + esc(i.id) + '\')">Cambiar estatus</button></div>' +
+        '</div>';
+    });
+    if (!incHtml) {
+      incHtml = '<div class="empty-state">Sin incidencias registradas.<br><button class="btn btn-secondary btn-sm" onclick="abrirFormIncidencia(\'' + esc(a.id) + '\', \'ficha\')">Reportar incidencia</button></div>';
+    }
+
+    html += '<div class="ficha-grid">' +
+      '<div class="ficha-section"><div class="section-title">Semáforo del apartamento</div>' + semHtml + '</div>' +
+      '<div class="ficha-section" style="align-self:start"><div class="section-title">Incidencias <span class="badge badge-gray">' + d.incidencias.abiertas + ' abiertas de ' + d.incidencias.total + '</span></div>' + incHtml + '</div>' +
+      '</div>';
+    document.getElementById('fichaContenido').innerHTML = html;
+    window._incidenciasFicha = d.incidencias.detalle;
+  }).catch(mostrarErrorGeneral);
+}
+
+/* ════════ ACTUALIZAR INCIDENCIA (WF-07) ════════ */
+function abrirActualizarIncidencia(incId) {
+  var i = (window._incidenciasFicha || []).filter(function (x) { return x.id === incId; })[0];
+  if (!i) return;
+  incidenciaEditando = i;
+  document.getElementById('miTitulo').textContent = i.titulo;
+  document.getElementById('miSub').textContent = 'Reportada el ' + fmtFecha(i.fecha_reporte) + ' por ' + i.reportado_por;
+  document.getElementById('miEstatus').value = i.estatus;
+  document.getElementById('miResponsable').value = i.responsable || '';
+  document.getElementById('miFecha').value = i.fecha_resolucion || '';
+  document.getElementById('miNotas').value = i.notas_resolucion || '';
+  ocultarError('miError');
+  abrirModal('modalIncidencia');
+}
+function guardarActualizacionIncidencia() {
+  if (!incidenciaEditando) return;
+  var body = {
+    incidencia_id: incidenciaEditando.id,
+    Estatus: document.getElementById('miEstatus').value,
+    Notas_resolucion: document.getElementById('miNotas').value.trim()
+  };
+  // WF-07 rechaza un Responsable vacío: solo se envía si hay valor
+  var resp = document.getElementById('miResponsable').value;
+  if (resp) body.Responsable = resp;
+  var fecha = document.getElementById('miFecha').value;
+  if (fecha) body.Fecha_resolucion = fecha;
+
+  var btn = document.getElementById('miGuardar');
+  btn.disabled = true;
+  API.actualizarIncidencia(body).then(function () {
+    cerrarModal('modalIncidencia');
+    showToast('Incidencia actualizada');
+    openFicha(fichaActual);
+  }).catch(function (e) { mostrarError('miError', e.message); })
+    .then(function () { btn.disabled = false; });
+}
+
+/* ════════ FORMULARIO REVISIÓN (WF-02) ════════ */
+function abrirFormRevision(aptoId, accionId, origen) {
+  volverA = origen;
+  ocultarError('revError');
+  var nota = document.getElementById('revPrefill');
+  var ap = aptoId ? aptoPorId(aptoId) : null;
+  var ac = accionId ? accionPorId(accionId) : null;
+  document.getElementById('revEdificio').value = ap ? ap.edificio : '';
+  llenarAptos('revEdificio', 'revApto', aptoId);
+  document.getElementById('revAccion').value = accionId || '';
+  document.getElementById('revFecha').value = hoyISO();
+  document.getElementById('revEstatus').value = 'Realizado';
+  document.getElementById('revResponsable').value = 'Interno';
+  document.getElementById('revNotas').value = '';
+  if (ap) {
+    nota.textContent = 'Nueva revisión para ' + ap.nombre + (ac ? ', ' + ac.nombre : '') + '.';
+    nota.classList.add('show');
+  } else {
+    nota.classList.remove('show');
+  }
+  showPage('revision');
+}
+function guardarRevision() {
+  var body = {
+    Apartamentos: document.getElementById('revApto').value,
+    Catalogo_acciones: document.getElementById('revAccion').value,
+    Fecha_ejecucion: document.getElementById('revFecha').value,
+    Estatus: document.getElementById('revEstatus').value,
+    Responsable: document.getElementById('revResponsable').value,
+    Notas: document.getElementById('revNotas').value.trim()
+  };
+  if (!body.Apartamentos) return mostrarError('revError', 'Elige un apartamento.');
+  if (!body.Catalogo_acciones) return mostrarError('revError', 'Elige una acción.');
+  if (!body.Fecha_ejecucion) return mostrarError('revError', 'Indica la fecha de ejecución.');
+  if (body.Fecha_ejecucion > hoyISO()) return mostrarError('revError', 'La fecha de ejecución no puede ser futura.');
+
+  var btn = document.getElementById('revGuardar');
+  btn.disabled = true;
+  API.crearRevision(body).then(function () {
+    showToast('Revisión registrada');
+    if (volverA === 'ficha') { fichaActual = body.Apartamentos; showPage('ficha'); }
+    else if (volverA === 'semaforo') showPage('semaforo');
+    else { fichaActual = body.Apartamentos; showPage('ficha'); }
+  }).catch(function (e) { mostrarError('revError', e.message); })
+    .then(function () { btn.disabled = false; });
+}
+
+/* ════════ FORMULARIO INCIDENCIA (WF-03) ════════ */
+function abrirFormIncidencia(aptoId, origen) {
+  volverA = origen;
+  ocultarError('incError');
+  var ap = aptoId ? aptoPorId(aptoId) : null;
+  document.getElementById('incEdificio').value = ap ? ap.edificio : '';
+  llenarAptos('incEdificio', 'incApto', aptoId);
+  document.getElementById('incTitulo').value = '';
+  document.getElementById('incPrioridad').value = 'Media';
+  document.getElementById('incFecha').value = hoyISO();
+  document.getElementById('incResponsable').value = '';
+  document.getElementById('incDescripcion').value = '';
+  var nota = document.getElementById('incPrefill');
+  if (ap) { nota.textContent = 'Nueva incidencia para ' + ap.nombre + '.'; nota.classList.add('show'); }
+  else nota.classList.remove('show');
+  showPage('incidencia');
+}
+function guardarIncidencia() {
+  var body = {
+    Apartamentos: document.getElementById('incApto').value,
+    Titulo: document.getElementById('incTitulo').value.trim(),
+    Prioridad: document.getElementById('incPrioridad').value,
+    Fecha_reporte: document.getElementById('incFecha').value,
+    Reportado_por: document.getElementById('incReportado').value.trim(),
+    Estatus: 'Abierta',
+    Descripcion: document.getElementById('incDescripcion').value.trim()
+  };
+  var resp = document.getElementById('incResponsable').value;
+  if (resp) body.Responsable = resp;
+  if (!body.Apartamentos) return mostrarError('incError', 'Elige un apartamento.');
+  if (!body.Titulo) return mostrarError('incError', 'Escribe un título para la incidencia.');
+  if (!body.Reportado_por) return mostrarError('incError', 'Indica quién la reporta.');
+
+  var btn = document.getElementById('incGuardar');
+  btn.disabled = true;
+  API.crearIncidencia(body).then(function () {
+    showToast('Incidencia reportada');
+    fichaActual = body.Apartamentos;
+    showPage('ficha');
+  }).catch(function (e) { mostrarError('incError', e.message); })
+    .then(function () { btn.disabled = false; });
+}
+
+function volverDesdeForm() {
+  if (volverA && PAGINAS[volverA]) showPage(volverA);
+  else showPage('dashboard');
+}
+
+/* ════════ VISTA TABULAR ════════ */
+function renderTabular() {
+  var edificio = document.getElementById('tabEdificio').value;
+  var filtro = document.getElementById('tabFiltro').value;
+  API.tabular(edificio, filtro).then(function (d) {
+    var html = '';
+    d.filas.forEach(function (f) {
+      html += '<tr><td><span class="apt-link" tabindex="0" onclick="openFicha(\'' + esc(f.apartamento_id) + '\')">' + esc(f.apartamento) + '</span></td>' +
+        '<td>' + esc(f.accion) + '</td><td>' + esc(f.grupo) + '</td>' +
+        '<td><span class="badge ' + CLASE_BADGE[f.color] + '">' + TEXTO_COLOR[f.color] + '</span></td>' +
+        '<td>' + (f.dias == null ? '—' : f.dias) + '</td>' +
+        '<td>' + fmtFecha(f.ultima_fecha) + '</td>' +
+        '<td>' + esc(f.estatus || '—') + '</td>' +
+        '<td>' + esc(f.responsable || '—') + '</td></tr>';
+    });
+    document.getElementById('tabBody').innerHTML = html || '<tr><td colspan="8" class="empty-state">No hay filas con ese filtro.</td></tr>';
+    document.getElementById('tabInfo').textContent = d.total + ' filas';
+  }).catch(mostrarErrorGeneral);
+}
+function descargarExcel() {
+  var url = API.urlExportar(document.getElementById('tabEdificio').value, document.getElementById('tabFiltro').value);
+  if (CONFIG.modo === 'demo') {
+    showToast('En modo demo no se descarga. Al conectar el backend se descargará el Excel de este edificio.');
+    return;
+  }
+  window.location.href = url;
+}
+
+/* ════════ MENSAJES ════════ */
+function mostrarError(id, msg) {
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function ocultarError(id) { document.getElementById(id).classList.remove('show'); }
+function mostrarErrorGeneral(e) { showToast('No se pudieron cargar los datos: ' + (e && e.message ? e.message : 'error desconocido')); }
+var toastTimer = null;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3500);
+}
+
+/* ════════ INICIO ════════ */
+API.dropdowns().then(function (d) {
+  CATALOGO = d;
+  opcionesEdificios('edificioSelect', false);
+  opcionesEdificios('tabEdificio', false);
+  opcionesEdificios('fichaEdificio', true);
+  opcionesEdificios('revEdificio', true);
+  opcionesEdificios('incEdificio', true);
+  llenarAptos('fichaEdificio', 'fichaApto');
+  llenarAptos('revEdificio', 'revApto');
+  llenarAptos('incEdificio', 'incApto');
+  opcionesAcciones('revAccion');
+  document.getElementById('appShell').classList.add('active');
+  renderDashboard();
+}).catch(mostrarErrorGeneral);
+</script>
+</body>
+</html>
