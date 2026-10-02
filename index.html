@@ -596,6 +596,8 @@ button.semaforo-cell { border: none; font-weight: 500; }
   .solo-tactil { display: inline-flex !important; }
   .solo-escritorio { display: none !important; }
 }
+.inc-fotos-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); margin-top: 10px; }
+.inc-fotos-label + .inc-fotos { margin-top: 6px; }
 .inc-fotos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .inc-fotos img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); cursor: zoom-in; }
 .visor-foto { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; cursor: zoom-out; }
@@ -999,6 +1001,24 @@ button.semaforo-cell { border: none; font-weight: 500; }
       <label for="miNotas">Notas de resolución</label>
       <textarea id="miNotas" rows="3" placeholder="Qué se hizo para resolverla"></textarea>
     </div>
+    <div class="field">
+      <label>Fotos de la resolución <span style="font-weight:400;color:var(--text-secondary)">(opcional, máximo 3)</span></label>
+      <div class="foto-zona" id="resFotoZona">
+        <div class="foto-botones">
+          <label class="btn btn-secondary btn-sm solo-tactil">📷 Tomar foto
+            <input class="foto-input" type="file" accept="image/*" capture="environment" onchange="agregarFotos('res', this)">
+          </label>
+          <label class="btn btn-secondary btn-sm solo-tactil">🖼 Galería
+            <input class="foto-input" type="file" accept="image/*" multiple onchange="agregarFotos('res', this)">
+          </label>
+          <label class="btn btn-secondary btn-sm solo-escritorio">⬆ Subir foto
+            <input class="foto-input" type="file" accept="image/*" multiple onchange="agregarFotos('res', this)">
+          </label>
+          <span class="foto-ayuda solo-escritorio">o arrastra / pega con Ctrl+V</span>
+        </div>
+        <div class="foto-thumbs" id="resFotoThumbs"></div>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="cerrarModal('modalIncidencia')">Cancelar</button>
       <button class="btn btn-primary" id="miGuardar" onclick="guardarActualizacionIncidencia()">Guardar cambios</button>
@@ -1225,7 +1245,8 @@ var API = (function () {
             id: i.id, titulo: i.titulo || '', prioridad: i.prioridad || '', fecha_reporte: i.fecha_reporte || '',
             reportado_por: i.reportado_por || '', estatus: i.estatus || '', responsable: i.responsable || '',
             descripcion: i.descripcion || '', notas_resolucion: i.notas_resolucion || '', fecha_resolucion: i.fecha_resolucion || '',
-            fotos: normalizarFotos(i.fotos)
+            fotos: normalizarFotos(i.fotos),
+            fotos_resolucion: normalizarFotos(i.fotos_resolucion)
           };
         });
         return {
@@ -1515,7 +1536,8 @@ function openFicha(aptoId) {
         '</div></div>' +
         (i.descripcion ? '<div class="inc-desc">' + esc(i.descripcion) + '</div>' : '') +
         ((i.notas_resolucion || i.fecha_resolucion) ? '<div class="inc-desc"><strong>Resolución' + (i.fecha_resolucion ? ' (' + fmtFecha(i.fecha_resolucion) + ')' : '') + ':</strong> ' + esc(i.notas_resolucion || 'sin notas') + '</div>' : '') +
-        htmlFotos(i.fotos) +
+        (i.fotos && i.fotos.length ? '<div class="inc-fotos-label">Fotos del reporte</div>' + htmlFotos(i.fotos) : '') +
+        (i.fotos_resolucion && i.fotos_resolucion.length ? '<div class="inc-fotos-label">Fotos de la resolución</div>' + htmlFotos(i.fotos_resolucion) : '') +
         '<div class="inc-actions"><button class="btn btn-secondary btn-sm" onclick="abrirActualizarIncidencia(\'' + esc(i.id) + '\')">Cambiar estatus</button></div>' +
         '</div>';
     });
@@ -1543,6 +1565,7 @@ function abrirActualizarIncidencia(incId) {
   document.getElementById('miResponsable').value = i.responsable || '';
   document.getElementById('miFecha').value = i.fecha_resolucion || '';
   document.getElementById('miNotas').value = i.notas_resolucion || '';
+  limpiarFotos('res');
   ocultarError('miError');
   abrirModal('modalIncidencia');
 }
@@ -1559,14 +1582,21 @@ function guardarActualizacionIncidencia() {
   var fecha = document.getElementById('miFecha').value;
   if (fecha) body.Fecha_resolucion = fecha;
 
+  if (FOTOS.procesando > 0) return mostrarError('miError', 'Espera a que terminen de prepararse las fotos.');
+  if (FOTOS.res.length) {
+    body.fotos_resolucion = FOTOS.res.map(function (f) { return { nombre: f.nombre, tipo: f.tipo, base64: f.base64 }; });
+  }
+
   var btn = document.getElementById('miGuardar');
+  var textoBtn = btn.textContent;
   btn.disabled = true;
+  if (body.fotos_resolucion) btn.textContent = 'Enviando fotos…';
   API.actualizarIncidencia(body).then(function () {
     cerrarModal('modalIncidencia');
     showToast('Incidencia actualizada');
     openFicha(fichaActual);
   }).catch(function (e) { mostrarError('miError', e.message); })
-    .then(function () { btn.disabled = false; });
+    .then(function () { btn.disabled = false; btn.textContent = textoBtn; });
 }
 
 /* ════════ FORMULARIO REVISIÓN (WF-02) ════════ */
@@ -1670,7 +1700,7 @@ function guardarIncidencia() {
 /* ════════ FOTOS ════════
    Comprime en el navegador (máx. 1600 px, JPEG 0,8) y guarda en base64.
    clave: 'inc' (incidencia). Preparado para añadir 'res' (resolución) y 'rev' (revisión). */
-var FOTOS = { inc: [], procesando: 0, max: 3 };
+var FOTOS = { inc: [], res: [], procesando: 0, max: 3 };
 
 function limpiarFotos(clave) { FOTOS[clave] = []; renderFotos(clave); }
 
@@ -1755,8 +1785,8 @@ function cerrarVisorFoto() {
 }
 
 // Arrastrar y soltar en la zona de fotos
-(function () {
-  var zona = document.getElementById('incFotoZona');
+['inc', 'res'].forEach(function (clave) {
+  var zona = document.getElementById(clave + 'FotoZona');
   if (!zona) return;
   ['dragenter', 'dragover'].forEach(function (ev) {
     zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('arrastrando'); });
@@ -1765,20 +1795,24 @@ function cerrarVisorFoto() {
     zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.remove('arrastrando'); });
   });
   zona.addEventListener('drop', function (e) {
-    procesarArchivos('inc', Array.prototype.slice.call((e.dataTransfer && e.dataTransfer.files) || []));
+    procesarArchivos(clave, Array.prototype.slice.call((e.dataTransfer && e.dataTransfer.files) || []));
   });
-})();
+});
 
 // Pegar una captura (Ctrl+V) mientras el formulario de incidencia está visible
 document.addEventListener('paste', function (e) {
+  var modal = document.getElementById('modalIncidencia');
   var pagina = document.getElementById('pageIncidencia');
-  if (!pagina || !pagina.classList.contains('active')) return;
+  var clave = null;
+  if (modal && modal.classList.contains('show')) clave = 'res';
+  else if (pagina && pagina.classList.contains('active')) clave = 'inc';
+  if (!clave) return;
   var items = (e.clipboardData && e.clipboardData.items) || [];
   var archivos = [];
   for (var i = 0; i < items.length; i++) {
     if (items[i].kind === 'file' && /^image\//.test(items[i].type)) archivos.push(items[i].getAsFile());
   }
-  if (archivos.length) { e.preventDefault(); procesarArchivos('inc', archivos); }
+  if (archivos.length) { e.preventDefault(); procesarArchivos(clave, archivos); }
 });
 
 function volverDesdeForm() {
