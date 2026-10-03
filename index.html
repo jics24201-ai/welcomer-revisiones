@@ -701,6 +701,23 @@ button.semaforo-cell { border: none; font-weight: 500; }
   .detalle dd { margin-bottom: 8px; }
   .btn-row { margin-left: 0; }
 }
+/* Aviso de demo y guía */
+.demo-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--yellow-bg); color: var(--yellow-text);
+  border: 1px solid var(--yellow); border-radius: var(--radius-sm);
+  padding: 8px 12px; font-size: 13px; line-height: 1.4; margin-bottom: 20px;
+}
+.demo-banner strong { font-weight: 700; }
+.demo-banner button {
+  margin-left: auto; background: none; border: none; padding: 0;
+  font: inherit; font-weight: 600; color: inherit; text-decoration: underline; cursor: pointer;
+}
+.guia h3 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; }
+.guia p, .guia li { font-size: 14px; line-height: 1.5; color: var(--text); }
+.guia ul { margin: 0; padding-left: 20px; }
+.guia li { margin-bottom: 6px; }
+.guia .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
@@ -748,12 +765,21 @@ button.semaforo-cell { border: none; font-weight: 500; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       Reportar incidencia
     </button>
+    <button class="nav-item" data-page="guia" onclick="abrirGuia()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Guía de uso
+    </button>
     <div class="sidebar-footer">
-      <div class="demo-tag"><strong>Conectado</strong>Datos reales de Airtable vía n8n.</div>
+      <div class="demo-tag"><strong>Entorno de demostración</strong>Conectado a Airtable vía n8n. Revisiones e incidencias de prueba.</div>
     </div>
   </nav>
 
   <main class="main">
+
+    <div class="demo-banner" role="note">
+      <span><strong>Entorno de demostración.</strong> Las revisiones e incidencias son de prueba. Puedes registrar lo que quieras: se borrará después de la presentación.</span>
+      <button type="button" onclick="abrirGuia()">Ver guía</button>
+    </div>
 
     <!-- ══ DASHBOARD ══ -->
     <div class="page active" id="pageDashboard">
@@ -1022,6 +1048,43 @@ button.semaforo-cell { border: none; font-weight: 500; }
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="cerrarModal('modalIncidencia')">Cancelar</button>
       <button class="btn btn-primary" id="miGuardar" onclick="guardarActualizacionIncidencia()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: guía de bienvenida -->
+<div class="modal-backdrop" id="modalGuia" onclick="if(event.target===this) cerrarGuia()">
+  <div class="modal guia" role="dialog" aria-modal="true" aria-labelledby="mgTitulo">
+    <div class="modal-title" id="mgTitulo">Bienvenido al sistema de revisiones</div>
+    <div class="modal-sub">Mantenimiento preventivo de los 12 edificios y 260 apartamentos de Welcomer</div>
+    <p>Esta herramienta muestra qué se ha revisado en cada apartamento, cuándo, y qué toca revisar ahora. Es un <strong>entorno de demostración</strong>: los edificios y apartamentos son reales, pero las revisiones e incidencias son de prueba.</p>
+
+    <h3>Qué datos vas a ver</h3>
+    <ul>
+      <li><strong>Málaga</strong> (SOHO, CARRIL, PLAZA LA MERCED) tiene revisiones de ejemplo para que veas el sistema en marcha.</li>
+      <li><strong>Madrid</strong> aparece en gris: así arrancaría el sistema real, antes de que nadie registre nada.</li>
+    </ul>
+
+    <h3>Cómo leer el semáforo</h3>
+    <ul style="list-style:none;padding-left:0">
+      <li><span class="dot" style="background:var(--green-bg);border:1px solid var(--green)"></span>Al día: revisión hecha dentro de plazo.</li>
+      <li><span class="dot" style="background:var(--yellow-bg);border:1px solid var(--yellow)"></span>Próxima a vencer: conviene programarla.</li>
+      <li><span class="dot" style="background:var(--red-bg);border:1px solid var(--red)"></span>Vencida o no realizada.</li>
+      <li><span class="dot" style="background:var(--gray-bg);border:1px solid var(--text-tertiary)"></span>Sin registro todavía.</li>
+    </ul>
+
+    <h3>Qué puedes probar</h3>
+    <ul>
+      <li><strong>Semáforo por edificio:</strong> elige SOHO y pulsa una celda de color para ver la última revisión, o una gris para registrarla.</li>
+      <li><strong>Ficha apartamento:</strong> todo el historial de un apartamento, con sus incidencias y fotos.</li>
+      <li><strong>Reportar incidencia:</strong> desde el móvil puedes adjuntar fotos con la cámara.</li>
+      <li><strong>Vista tabular:</strong> el estado de un edificio en lista, descargable en Excel.</li>
+    </ul>
+
+    <div class="explicacion">En el móvil, el semáforo es grande (38 acciones por apartamento). Para consultar desde el teléfono, la <strong>Ficha apartamento</strong> es más cómoda.</div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="cerrarGuia()">Empezar</button>
     </div>
   </div>
 </div>
@@ -1480,8 +1543,22 @@ function abrirModal(id) {
 }
 function cerrarModal(id) { document.getElementById(id).classList.remove('show'); }
 document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape') { cerrarModal('modalRevision'); cerrarModal('modalIncidencia'); cerrarVisorFoto(); }
+  if (e.key === 'Escape') { cerrarModal('modalRevision'); cerrarModal('modalIncidencia'); cerrarGuia(); cerrarVisorFoto(); }
 });
+
+/* ════════ GUÍA DE BIENVENIDA ════════ */
+var GUIA_CLAVE = 'welcomer_guia_vista';
+function abrirGuia() {
+  closeSidebar();
+  abrirModal('modalGuia');
+}
+function cerrarGuia() {
+  cerrarModal('modalGuia');
+  try { localStorage.setItem(GUIA_CLAVE, '1'); } catch (e) {}
+}
+function guiaYaVista() {
+  try { return localStorage.getItem(GUIA_CLAVE) === '1'; } catch (e) { return false; }
+}
 
 /* ════════ FICHA APARTAMENTO ════════ */
 function openFicha(aptoId) {
@@ -1879,6 +1956,7 @@ API.dropdowns().then(function (d) {
   opcionesAcciones('revAccion');
   document.getElementById('appShell').classList.add('active');
   renderDashboard();
+  if (!guiaYaVista()) abrirGuia();
 }).catch(mostrarErrorGeneral);
 </script>
 </body>
