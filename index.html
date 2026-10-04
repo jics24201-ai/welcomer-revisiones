@@ -701,6 +701,26 @@ button.semaforo-cell { border: none; font-weight: 500; }
   .detalle dd { margin-bottom: 8px; }
   .btn-row { margin-left: 0; }
 }
+/* Resumen móvil del semáforo */
+.sem-modo { display: none; margin-bottom: 12px; }
+.sem-modo.visible { display: block; }
+.resumen-apto {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 12px 14px; background: none; border: none; border-bottom: 1px solid var(--border);
+  font: inherit; color: var(--text); text-align: left; cursor: pointer;
+}
+.resumen-apto:last-child { border-bottom: none; }
+.resumen-apto:active { background: var(--surface-alt); }
+.resumen-apto .codigo { font-weight: 600; font-size: 14px; min-width: 64px; }
+.resumen-apto .chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.resumen-apto .chip { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 10px; min-width: 28px; text-align: center; }
+.resumen-apto .chip.green { background: var(--green-bg); color: var(--green-text); }
+.resumen-apto .chip.yellow { background: var(--yellow-bg); color: var(--yellow-text); }
+.resumen-apto .chip.red { background: var(--red-bg); color: var(--red-text); }
+.resumen-apto .chip.empty { background: var(--gray-bg); color: var(--text-tertiary); }
+.resumen-apto .chip.cero { opacity: .35; }
+.resumen-apto .flecha { color: var(--text-tertiary); font-size: 18px; }
+.resumen-vacio { padding: 20px; text-align: center; color: var(--text-secondary); font-size: 14px; }
 /* Aviso de demo y guía */
 .demo-banner {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -826,6 +846,7 @@ button.semaforo-cell { border: none; font-weight: 500; }
         <div class="legend-item"><div class="legend-dot" style="background:var(--gray-bg);border:1px solid var(--text-tertiary)"></div> Sin registro</div>
         <div class="legend-item">El número son los días desde la última revisión; P, W y B indican Pendiente, WIP y Bloqueado</div>
       </div>
+      <div class="sem-modo" id="semaforoModo"></div>
       <div class="table-wrap" id="semaforoContainer"></div>
     </div>
 
@@ -1475,9 +1496,74 @@ function irASemaforo(edificio) {
 }
 
 /* ════════ SEMÁFORO ════════ */
+var ultimoSemaforo = null;
+var matrizEnMovil = false;
+function esMovil() { return window.matchMedia('(max-width: 768px)').matches; }
+
 function renderSemaforo() {
   var edificio = document.getElementById('edificioSelect').value;
   API.semaforo(edificio).then(function (d) {
+    ultimoSemaforo = d;
+    dibujarSemaforo();
+  }).catch(mostrarErrorGeneral);
+}
+
+function dibujarSemaforo() {
+  var d = ultimoSemaforo;
+  if (!d) return;
+  var modo = document.getElementById('semaforoModo');
+  if (esMovil()) {
+    modo.className = 'sem-modo visible';
+    modo.innerHTML = matrizEnMovil
+      ? '<button class="btn btn-secondary btn-sm" onclick="cambiarModoSemaforo(false)">Ver resumen por apartamento</button>'
+      : '<button class="btn btn-secondary btn-sm" onclick="cambiarModoSemaforo(true)">Ver matriz completa</button>';
+    if (!matrizEnMovil) { dibujarResumenMovil(d); return; }
+  } else {
+    modo.className = 'sem-modo';
+    modo.innerHTML = '';
+  }
+  dibujarMatriz(d);
+}
+
+function cambiarModoSemaforo(matriz) {
+  matrizEnMovil = matriz;
+  dibujarSemaforo();
+}
+
+function dibujarResumenMovil(d) {
+  var orden = ['verde', 'amarillo', 'rojo', 'gris'];
+  var filas = d.apartamentos.map(function (ap) {
+    var cuenta = { verde: 0, amarillo: 0, rojo: 0, gris: 0 };
+    d.acciones.forEach(function (ac) {
+      var c = d.celdas[ap.id + '|' + ac.id];
+      if (c && cuenta[c.color] !== undefined) cuenta[c.color]++;
+    });
+    return { ap: ap, cuenta: cuenta };
+  });
+  if (filtroSemaforo !== 'todos') {
+    filas = filas.filter(function (f) { return f.cuenta[filtroSemaforo] > 0; });
+    filas.sort(function (a, b) { return b.cuenta[filtroSemaforo] - a.cuenta[filtroSemaforo]; });
+  }
+  var html = '';
+  if (!filas.length) {
+    html = '<div class="resumen-vacio">Ningún apartamento con acciones en «' + esc(TEXTO_COLOR[filtroSemaforo]) + '».</div>';
+  } else {
+    filas.forEach(function (f) {
+      var titulo = f.ap.nombre + ': ' + orden.map(function (k) { return f.cuenta[k] + ' ' + TEXTO_COLOR[k]; }).join(', ');
+      html += '<button class="resumen-apto" aria-label="' + esc(titulo) + '" onclick="openFicha(\'' + esc(f.ap.id) + '\')">' +
+        '<span class="codigo">' + esc(f.ap.nombre) + '</span><span class="chips">';
+      orden.forEach(function (k) {
+        var resaltar = filtroSemaforo !== 'todos' && k !== filtroSemaforo ? ' cero' : (f.cuenta[k] === 0 ? ' cero' : '');
+        html += '<span class="chip ' + CLASE_CELDA[k] + resaltar + '" title="' + esc(TEXTO_COLOR[k]) + '">' + f.cuenta[k] + '</span>';
+      });
+      html += '</span><span class="flecha" aria-hidden="true">›</span></button>';
+    });
+  }
+  document.getElementById('semaforoContainer').innerHTML = html;
+}
+
+function dibujarMatriz(d) {
+  (function () {
     var html = '<table class="semaforo-table"><thead><tr><th class="sticky-col">Apto</th>';
     d.acciones.forEach(function (ac) {
       html += '<th class="col-accion" title="' + esc(ac.numero + '. ' + ac.nombre) + '"><div class="txt">' + esc(ac.nombre) + '</div></th>';
@@ -1495,14 +1581,17 @@ function renderSemaforo() {
     });
     html += '</tbody></table>';
     document.getElementById('semaforoContainer').innerHTML = html;
-  }).catch(mostrarErrorGeneral);
+  })();
 }
 function filterSemaforo(filtro, btn) {
   filtroSemaforo = filtro;
   document.querySelectorAll('#pageSemaforo .filter-btn').forEach(function (b) { b.classList.remove('active'); });
   btn.classList.add('active');
-  renderSemaforo();
+  if (ultimoSemaforo) dibujarSemaforo(); else renderSemaforo();
 }
+window.matchMedia('(max-width: 768px)').addEventListener('change', function () {
+  if (paginaActual === 'semaforo') dibujarSemaforo();
+});
 function clickCelda(aptoId, accionId, color) {
   if (color === 'gris') abrirFormRevision(aptoId, accionId, paginaActual);
   else abrirFichaRevision(aptoId, accionId);
