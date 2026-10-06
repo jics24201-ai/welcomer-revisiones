@@ -721,6 +721,24 @@ button.semaforo-cell { border: none; font-weight: 500; }
 .resumen-apto .chip.cero { opacity: .35; }
 .resumen-apto .flecha { color: var(--text-tertiary); font-size: 18px; }
 .resumen-vacio { padding: 20px; text-align: center; color: var(--text-secondary); font-size: 14px; }
+/* Indicador de carga */
+.cargando {
+  position: fixed; top: 16px; left: 50%; transform: translate(-50%, -8px);
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: 999px; padding: 8px 16px 8px 12px; box-shadow: var(--shadow);
+  font-size: 13px; font-weight: 500; z-index: 300;
+  opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s;
+}
+.cargando.visible { opacity: 1; transform: translate(-50%, 0); }
+.cargando .rueda {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--primary);
+  animation: girar .8s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+body.ocupado .main { opacity: .6; transition: opacity .15s; }
+body.ocupado, body.ocupado * { cursor: progress !important; }
 /* Aviso de demo y guía */
 .demo-banner {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -1111,6 +1129,7 @@ button.semaforo-cell { border: none; font-weight: 500; }
   </div>
 </div>
 
+<div class="cargando" id="cargando" role="status" aria-live="polite"><span class="rueda" aria-hidden="true"></span><span id="cargandoTexto">Cargando datos…</span></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -1213,7 +1232,8 @@ var API = (function () {
   }
 
   function peticion(url, opciones) {
-    return fetch(url, opciones).then(function (res) {
+    CARGA.inicio(opciones && opciones.method === 'POST' ? 'Guardando…' : 'Cargando datos…');
+    return fetch(url, opciones).finally(CARGA.fin).then(function (res) {
       return res.text().then(function (txt) {
         var datos = null;
         try { datos = txt ? JSON.parse(txt) : null; } catch (e) { datos = null; }
@@ -1635,6 +1655,29 @@ function cerrarModal(id) { document.getElementById(id).classList.remove('show');
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') { cerrarModal('modalRevision'); cerrarModal('modalIncidencia'); cerrarGuia(); cerrarVisorFoto(); }
 });
+
+/* ════════ INDICADOR DE CARGA ════════ */
+var CARGA = {
+  pendientes: 0, temporizador: null,
+  inicio: function (texto) {
+    CARGA.pendientes++;
+    document.getElementById('cargandoTexto').textContent = texto;
+    if (CARGA.pendientes === 1) {
+      CARGA.temporizador = setTimeout(function () {
+        document.getElementById('cargando').classList.add('visible');
+        document.body.classList.add('ocupado');
+      }, 200);
+    }
+  },
+  fin: function () {
+    CARGA.pendientes = Math.max(0, CARGA.pendientes - 1);
+    if (CARGA.pendientes === 0) {
+      clearTimeout(CARGA.temporizador);
+      document.getElementById('cargando').classList.remove('visible');
+      document.body.classList.remove('ocupado');
+    }
+  }
+};
 
 /* ════════ GUÍA DE BIENVENIDA ════════ */
 var GUIA_CLAVE = 'welcomer_guia_vista';
