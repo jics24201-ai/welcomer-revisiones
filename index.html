@@ -721,6 +721,20 @@ button.semaforo-cell { border: none; font-weight: 500; }
 .resumen-apto .chip.cero { opacity: .35; }
 .resumen-apto .flecha { color: var(--text-tertiary); font-size: 18px; }
 .resumen-vacio { padding: 20px; text-align: center; color: var(--text-secondary); font-size: 14px; }
+/* Semáforo: grupos y cabecera fija */
+.semaforo-scroll { max-height: calc(100vh - 300px); min-height: 360px; overflow: auto; }
+.semaforo-table .fila-grupo th { position: sticky; top: 0; height: 30px; z-index: 3; }
+.semaforo-table .fila-accion th { position: sticky; top: 30px; z-index: 3; box-shadow: inset 0 -1px 0 var(--border); }
+.semaforo-table thead .esquina { position: sticky; top: 0; left: 0; z-index: 5; }
+.semaforo-table th.col-grupo {
+  padding: 4px 5px; font-size: 10px; font-weight: 700; letter-spacing: .02em;
+  text-align: left; vertical-align: middle; color: var(--text-secondary);
+  border-left: 2px solid var(--border);
+}
+.semaforo-table .g-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.semaforo-table th.g-par { background: var(--surface-alt); }
+.semaforo-table th.g-impar { background: var(--surface); }
+.semaforo-table th.g-ini, .semaforo-table td.g-ini { border-left: 2px solid var(--border); }
 /* Indicador de carga */
 .cargando {
   position: fixed; top: 16px; left: 50%; transform: translate(-50%, -8px);
@@ -1580,29 +1594,56 @@ function dibujarResumenMovil(d) {
       html += '</span><span class="flecha" aria-hidden="true">›</span></button>';
     });
   }
-  document.getElementById('semaforoContainer').innerHTML = html;
+  var contR = document.getElementById('semaforoContainer');
+  contR.classList.remove('semaforo-scroll');
+  contR.innerHTML = html;
 }
 
 function dibujarMatriz(d) {
-  (function () {
-    var html = '<table class="semaforo-table"><thead><tr><th class="sticky-col">Apto</th>';
-    d.acciones.forEach(function (ac) {
-      html += '<th class="col-accion" title="' + esc(ac.numero + '. ' + ac.nombre) + '"><div class="txt">' + esc(ac.nombre) + '</div></th>';
+  var acciones = d.acciones;
+  // Bloques consecutivos de acciones del mismo grupo (A. FONTANERÍA..., B. CLIMA...)
+  var bloques = [];
+  acciones.forEach(function (ac) {
+    var g = ac.grupo || 'Sin grupo';
+    var ult = bloques[bloques.length - 1];
+    if (ult && ult.grupo === g) ult.n++;
+    else bloques.push({ grupo: g, n: 1 });
+  });
+  var inicioGrupo = {}, parGrupo = {}, idx = 0;
+  bloques.forEach(function (b, i) {
+    inicioGrupo[acciones[idx].id] = true;
+    for (var k = 0; k < b.n; k++) parGrupo[acciones[idx + k].id] = i % 2 === 0;
+    idx += b.n;
+  });
+
+  var html = '<table class="semaforo-table"><thead>';
+  html += '<tr class="fila-grupo"><th class="sticky-col esquina" rowspan="2">Apto</th>';
+  bloques.forEach(function (b, i) {
+    var ancho = b.n * 44 - 10;
+    var texto = b.n >= 2 ? b.grupo : b.grupo.split('.')[0];
+    html += '<th class="col-grupo ' + (i % 2 === 0 ? 'g-par' : 'g-impar') + '" colspan="' + b.n + '" title="' + esc(b.grupo) + '">' +
+      '<div class="g-txt" style="max-width:' + ancho + 'px">' + esc(texto) + '</div></th>';
+  });
+  html += '</tr><tr class="fila-accion">';
+  acciones.forEach(function (ac) {
+    var cls = 'col-accion' + (inicioGrupo[ac.id] ? ' g-ini' : '') + (parGrupo[ac.id] ? ' g-par' : ' g-impar');
+    html += '<th class="' + cls + '" title="' + esc(ac.numero + '. ' + ac.nombre + ' (' + (ac.grupo || '') + ')') + '"><div class="txt">' + esc(ac.nombre) + '</div></th>';
+  });
+  html += '</tr></thead><tbody>';
+  d.apartamentos.forEach(function (ap) {
+    html += '<tr><td class="sticky-col"><span class="apt-link" tabindex="0" onclick="openFicha(\'' + esc(ap.id) + '\')">' + esc(ap.nombre) + '</span></td>';
+    acciones.forEach(function (ac) {
+      var c = d.celdas[ap.id + '|' + ac.id];
+      var dim = filtroSemaforo !== 'todos' && c.color !== filtroSemaforo ? ' dim' : '';
+      var titulo = ap.nombre + ', ' + ac.nombre + ': ' + TEXTO_COLOR[c.color] + (c.ultima_fecha ? ' (' + fmtFecha(c.ultima_fecha) + ')' : '');
+      html += '<td' + (inicioGrupo[ac.id] ? ' class="g-ini"' : '') + '><button class="semaforo-cell ' + CLASE_CELDA[c.color] + dim + '" title="' + esc(titulo) + '" aria-label="' + esc(titulo) + '" onclick="clickCelda(\'' + esc(ap.id) + '\',\'' + esc(ac.id) + '\',\'' + c.color + '\')">' + etiquetaCelda(c) + '</button></td>';
     });
-    html += '</tr></thead><tbody>';
-    d.apartamentos.forEach(function (ap) {
-      html += '<tr><td class="sticky-col"><span class="apt-link" tabindex="0" onclick="openFicha(\'' + esc(ap.id) + '\')">' + esc(ap.nombre) + '</span></td>';
-      d.acciones.forEach(function (ac) {
-        var c = d.celdas[ap.id + '|' + ac.id];
-        var dim = filtroSemaforo !== 'todos' && c.color !== filtroSemaforo ? ' dim' : '';
-        var titulo = ap.nombre + ', ' + ac.nombre + ': ' + TEXTO_COLOR[c.color] + (c.ultima_fecha ? ' (' + fmtFecha(c.ultima_fecha) + ')' : '');
-        html += '<td><button class="semaforo-cell ' + CLASE_CELDA[c.color] + dim + '" title="' + esc(titulo) + '" aria-label="' + esc(titulo) + '" onclick="clickCelda(\'' + esc(ap.id) + '\',\'' + esc(ac.id) + '\',\'' + c.color + '\')">' + etiquetaCelda(c) + '</button></td>';
-      });
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    document.getElementById('semaforoContainer').innerHTML = html;
-  })();
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  var cont = document.getElementById('semaforoContainer');
+  cont.classList.add('semaforo-scroll');
+  cont.innerHTML = html;
 }
 function filterSemaforo(filtro, btn) {
   filtroSemaforo = filtro;
