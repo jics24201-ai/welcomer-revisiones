@@ -379,6 +379,11 @@ tr:hover td { background: var(--surface-alt); }
   font-weight: 500;
 }
 .apt-link:hover { text-decoration: underline; }
+/* Dashboard por edificio: números que abren la ficha */
+.badge-link { cursor: pointer; border: none; font: inherit; }
+.badge-link:hover { text-decoration: underline; filter: brightness(0.96); }
+.cero { color: var(--text-tertiary); }
+.fila-total td { font-weight: 600; background: var(--gray-bg); }
 
 /* ── FICHA APARTAMENTO ── */
 .ficha-header {
@@ -801,6 +806,10 @@ body.ocupado, body.ocupado * { cursor: progress !important; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
       Semáforo por edificio
     </button>
+    <button class="nav-item" data-page="dashEdificio" onclick="showPage('dashEdificio')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><rect x="5" y="3" width="14" height="18" rx="1"/><line x1="9" y1="7" x2="9.01" y2="7"/><line x1="15" y1="7" x2="15.01" y2="7"/><line x1="9" y1="11" x2="9.01" y2="11"/><line x1="15" y1="11" x2="15.01" y2="11"/><line x1="9" y1="15" x2="9.01" y2="15"/><line x1="15" y1="15" x2="15.01" y2="15"/></svg>
+      Dashboard por edificio
+    </button>
     <button class="nav-item" data-page="ficha" onclick="showPage('ficha')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Ficha apartamento
@@ -880,6 +889,22 @@ body.ocupado, body.ocupado * { cursor: progress !important; }
       </div>
       <div class="sem-modo" id="semaforoModo"></div>
       <div class="table-wrap" id="semaforoContainer"></div>
+    </div>
+
+    <!-- ══ DASHBOARD POR EDIFICIO ══ -->
+    <div class="page" id="pageDashEdificio">
+      <div class="page-title">Dashboard por edificio</div>
+      <div class="page-subtitle">Estado de las revisiones e incidencias abiertas de cada apartamento. Pulsa un número para abrir la ficha.</div>
+      <div class="semaforo-controls">
+        <select id="dashEdSelect" onchange="renderDashEdificio()" aria-label="Edificio"></select>
+      </div>
+      <div class="stats-grid" id="dashEdTotales"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Apartamento</th><th>Al día</th><th>Próximas</th><th>Vencidas</th><th>Sin registro</th><th>Incidencias abiertas</th></tr></thead>
+          <tbody id="dashEdBody"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ══ FICHA APARTAMENTO ══ -->
@@ -1404,6 +1429,10 @@ var API = (function () {
       });
     },
 
+    dashboardEdificio: function (edificio) {
+      return consultar('dashboard_edificio', { edificio: edificio });
+    },
+
     crearRevision: function (body) { return enviar(CONFIG.rutas.revisiones, body); },
     crearIncidencia: function (body) { return enviar(CONFIG.rutas.incidencias, body); },
     actualizarIncidencia: function (body) { return enviar(CONFIG.rutas.actualizarIncidencia, body); },
@@ -1426,7 +1455,7 @@ function aptoPorId(id) { return CATALOGO.apartamentos.filter(function (a) { retu
 function accionPorId(id) { return CATALOGO.acciones.filter(function (a) { return a.id === id; })[0]; }
 
 /* ════════ NAVEGACIÓN ════════ */
-var PAGINAS = { dashboard: 'pageDashboard', semaforo: 'pageSemaforo', ficha: 'pageFicha', tabular: 'pageTabular', revision: 'pageRevision', incidencia: 'pageIncidencia' };
+var PAGINAS = { dashboard: 'pageDashboard', dashEdificio: 'pageDashEdificio', semaforo: 'pageSemaforo', ficha: 'pageFicha', tabular: 'pageTabular', revision: 'pageRevision', incidencia: 'pageIncidencia' };
 function showPage(id) {
   paginaActual = id;
   document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
@@ -1436,6 +1465,7 @@ function showPage(id) {
   if (nav) nav.classList.add('active');
   if (id === 'dashboard') renderDashboard();
   if (id === 'semaforo') renderSemaforo();
+  if (id === 'dashEdificio') renderDashEdificio();
   if (id === 'tabular') renderTabular();
   if (id === 'ficha' && fichaActual) openFicha(fichaActual);
   closeSidebar();
@@ -1528,6 +1558,48 @@ function renderDashboard() {
 function irASemaforo(edificio) {
   document.getElementById('edificioSelect').value = edificio;
   showPage('semaforo');
+}
+
+/* ════════ DASHBOARD POR EDIFICIO ════════ */
+var fichaIrA = null;   // sección de la ficha a la que desplazarse al abrirla
+function irAFicha(aptoId, seccion) {
+  fichaIrA = seccion;
+  openFicha(aptoId);
+}
+function celdaDash(valor, clase, aptoId, seccion) {
+  if (valor === null || valor === undefined) return '<td class="cero">—</td>';
+  if (valor === 0) return '<td class="cero">0</td>';
+  return '<td><button type="button" class="badge ' + clase + ' badge-link" onclick="irAFicha(\'' + esc(aptoId) + '\', \'' + seccion + '\')">' + valor + '</button></td>';
+}
+function renderDashEdificio() {
+  var edificio = document.getElementById('dashEdSelect').value;
+  if (!edificio) return;
+  API.dashboardEdificio(edificio).then(function (d) {
+    var t = d.totales || {};
+    document.getElementById('dashEdTotales').innerHTML =
+      statCard('green', 'Al día', t.verde || 0, 'acciones en verde') +
+      statCard('yellow', 'Próximas a vencer', t.amarillo || 0, 'acciones en amarillo') +
+      statCard('red', 'Vencidas', t.rojo || 0, 'vencidas o no realizadas') +
+      statCard('neutral', 'Sin registro', t.gris || 0, 'nunca revisadas') +
+      statCard('red', 'Incidencias abiertas', t.incidencias_abiertas || 0, 'incluye zonas comunes');
+
+    var filas = '';
+    (d.apartamentos || []).forEach(function (a) {
+      filas += '<tr><td><span class="apt-link" tabindex="0" onclick="irAFicha(\'' + esc(a.apartamento_id) + '\', \'semaforo\')">' + esc(a.apartamento) + '</span>' +
+        (a.es_zona_comun ? ' <span class="badge badge-gray">Zona común</span>' : '') + '</td>' +
+        celdaDash(a.verde, 'badge-green', a.apartamento_id, 'semaforo') +
+        celdaDash(a.amarillo, 'badge-yellow', a.apartamento_id, 'semaforo') +
+        celdaDash(a.rojo, 'badge-red', a.apartamento_id, 'semaforo') +
+        celdaDash(a.gris, 'badge-gray', a.apartamento_id, 'semaforo') +
+        celdaDash(a.incidencias_abiertas, 'badge-red', a.apartamento_id, 'incidencias') + '</tr>';
+    });
+    if (filas) {
+      filas += '<tr class="fila-total"><td>Total ' + esc(d.edificio) + ' (' + d.total_apartamentos + ' apartamentos)</td>' +
+        '<td>' + (t.verde || 0) + '</td><td>' + (t.amarillo || 0) + '</td><td>' + (t.rojo || 0) + '</td>' +
+        '<td>' + (t.gris || 0) + '</td><td>' + (t.incidencias_abiertas || 0) + '</td></tr>';
+    }
+    document.getElementById('dashEdBody').innerHTML = filas || '<tr><td colspan="6" class="empty-state">Este edificio no tiene apartamentos.</td></tr>';
+  }).catch(mostrarErrorGeneral);
 }
 
 /* ════════ SEMÁFORO ════════ */
@@ -1797,11 +1869,16 @@ function openFicha(aptoId) {
     }
 
     html += '<div class="ficha-grid">' +
-      '<div class="ficha-section"><div class="section-title">Semáforo del apartamento</div>' + semHtml + '</div>' +
-      '<div class="ficha-section" style="align-self:start"><div class="section-title">Incidencias <span class="badge badge-gray">' + d.incidencias.abiertas + ' abiertas de ' + d.incidencias.total + '</span></div>' + incHtml + '</div>' +
+      '<div class="ficha-section" id="fichaSecSemaforo"><div class="section-title">Semáforo del apartamento</div>' + semHtml + '</div>' +
+      '<div class="ficha-section" id="fichaSecIncidencias" style="align-self:start"><div class="section-title">Incidencias <span class="badge badge-gray">' + d.incidencias.abiertas + ' abiertas de ' + d.incidencias.total + '</span></div>' + incHtml + '</div>' +
       '</div>';
     document.getElementById('fichaContenido').innerHTML = html;
     window._incidenciasFicha = d.incidencias.detalle;
+    if (fichaIrA) {
+      var destino = document.getElementById(fichaIrA === 'incidencias' ? 'fichaSecIncidencias' : 'fichaSecSemaforo');
+      fichaIrA = null;
+      if (destino) destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }).catch(mostrarErrorGeneral);
 }
 
@@ -2121,6 +2198,7 @@ API.dropdowns().then(function (d) {
   CATALOGO = d;
   opcionesEdificios('edificioSelect', false);
   opcionesEdificios('tabEdificio', false);
+  opcionesEdificios('dashEdSelect', false);
   opcionesEdificios('fichaEdificio', true);
   opcionesEdificios('revEdificio', true);
   opcionesEdificios('incEdificio', true);
