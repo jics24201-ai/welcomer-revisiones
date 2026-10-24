@@ -779,9 +779,40 @@ body.ocupado, body.ocupado * { cursor: progress !important; }
   * { transition: none !important; }
 }
 
+/* ── LOGIN ── */
+.login-screen { display: none; min-height: 100vh; align-items: center; justify-content: center; padding: 24px 16px; background: var(--bg); }
+body.sin-sesion .login-screen { display: flex; }
+body.sin-sesion .app, body.sin-sesion .app.active { display: none !important; }
+.login-card { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px 28px; box-shadow: var(--shadow); }
+.login-card .brand { font-weight: 700; font-size: 18px; color: var(--primary); letter-spacing: .5px; }
+.login-card .sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+.login-card .btn-primary { width: 100%; padding: 12px; }
+.login-aviso { font-size: 13px; color: var(--text-secondary); background: var(--surface-alt); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 16px; display: none; }
+.login-aviso.show { display: block; }
+.sesion-usuario { margin-bottom: 12px; }
+.sesion-usuario .btn { width: 100%; justify-content: center; margin-top: 8px; padding: 8px; font-size: 13px; }
 </style>
 </head>
-<body>
+<body class="sin-sesion">
+
+<!-- ══ LOGIN ══ -->
+<div class="login-screen" id="loginScreen">
+  <form class="login-card" id="loginForm" onsubmit="enviarLogin(event)" novalidate>
+    <div class="brand">WELCOMER</div>
+    <div class="sub">Revisiones y Mantenimiento</div>
+    <div class="login-aviso" id="loginAviso"></div>
+    <div class="form-error" id="loginError"></div>
+    <div class="field">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="loginPassword">Contraseña</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn btn-primary" id="loginBoton">Entrar</button>
+  </form>
+</div>
 
 <div class="app" id="appShell">
 
@@ -831,6 +862,11 @@ body.ocupado, body.ocupado * { cursor: progress !important; }
       Guía de uso
     </button>
     <div class="sidebar-footer">
+      <div class="sesion-usuario user-info">
+        <div class="name" id="sesionNombre"></div>
+        <div class="role" id="sesionRol"></div>
+        <button type="button" class="btn btn-secondary" onclick="cerrarSesion()">Cerrar sesión</button>
+      </div>
       <div class="demo-tag"><strong>Entorno de demostración</strong>Historial real de Málaga. Conectado a Airtable vía n8n.</div>
     </div>
   </nav>
@@ -1184,7 +1220,8 @@ var CONFIG = {
   rutas: {
     revisiones: '/revisiones',
     incidencias: '/incidencias',
-    actualizarIncidencia: '/incidencias-actualizar'
+    actualizarIncidencia: '/incidencias-actualizar',
+    login: '/login'
   },
   demoKey: ''   // si WF-02/03/07 exigen cabecera X-Demo-Key, poner aquí el valor
 };
@@ -1250,6 +1287,50 @@ function calcularColor(estado, accion) {
      POST CONFIG.rutas.actualizarIncidencia  (WF-07)
      GET  /exportar?edificio=...&filtro=...  (WF-05)
 */
+/* ════════ SESIÓN ════════
+   El token que entrega /login se guarda en el navegador y se envía
+   en cada petición (cabecera Authorization). Caduca a las 12 h.
+   ════════════════════════════════════════════════════════════ */
+var SESION = (function () {
+  var CLAVE = 'welcomer_sesion';
+  var actual = null;
+
+  function leerPayload(token) {
+    try {
+      var parte = String(token).split('.')[1];
+      parte = parte.replace(/-/g, '+').replace(/_/g, '/');
+      while (parte.length % 4) parte += '=';
+      return JSON.parse(decodeURIComponent(escape(atob(parte))));
+    } catch (e) { return null; }
+  }
+
+  return {
+    guardar: function (datos) {
+      var p = leerPayload(datos.token) || {};
+      actual = { token: datos.token, nombre: datos.nombre || p.nombre || '', email: datos.email || p.email || '', rol: datos.rol || p.rol || '', exp: Number(p.exp) || 0 };
+      try { localStorage.setItem(CLAVE, JSON.stringify(actual)); } catch (e) {}
+    },
+    cargar: function () {
+      if (actual) return actual;
+      try { actual = JSON.parse(localStorage.getItem(CLAVE) || 'null'); } catch (e) { actual = null; }
+      return actual;
+    },
+    borrar: function () {
+      actual = null;
+      try { localStorage.removeItem(CLAVE); } catch (e) {}
+    },
+    // Válida si existe y le queda más de 1 minuto
+    valida: function () {
+      var s = SESION.cargar();
+      return !!(s && s.token && s.exp && (s.exp * 1000) > (Date.now() + 60000));
+    },
+    token: function () {
+      var s = SESION.cargar();
+      return s ? s.token : '';
+    }
+  };
+})();
+
 var API = (function () {
   // Catálogo en caché (se llena con dropdowns al arrancar)
   var cat = { edificios: [], apartamentos: [], acciones: [], edPorId: {}, apPorId: {}, acPorId: {} };
@@ -1271,8 +1352,15 @@ var API = (function () {
   }
 
   function peticion(url, opciones) {
-    CARGA.inicio(opciones && opciones.method === 'POST' ? 'Guardando…' : 'Cargando datos…');
+    opciones = opciones || {};
+    opciones.headers = opciones.headers || {};
+    if (SESION.token()) opciones.headers['Authorization'] = 'Bearer ' + SESION.token();
+    CARGA.inicio(opciones.method === 'POST' ? 'Guardando…' : 'Cargando datos…');
     return fetch(url, opciones).finally(CARGA.fin).then(function (res) {
+      if (res.status === 401) {
+        sesionCaducada();
+        throw new Error('Tu sesión ha caducado. Vuelve a entrar.');
+      }
       return res.text().then(function (txt) {
         var datos = null;
         try { datos = txt ? JSON.parse(txt) : null; } catch (e) { datos = null; }
@@ -1438,7 +1526,27 @@ var API = (function () {
     actualizarIncidencia: function (body) { return enviar(CONFIG.rutas.actualizarIncidencia, body); },
 
     urlExportar: function (edificio, filtro) {
-      return CONFIG.apiBase + '/exportar?edificio=' + encodeURIComponent(edificio) + '&filtro=' + encodeURIComponent(filtro);
+      return CONFIG.apiBase + '/exportar?edificio=' + encodeURIComponent(edificio) + '&filtro=' + encodeURIComponent(filtro) +
+        '&token=' + encodeURIComponent(SESION.token());
+    },
+
+    // El login no usa peticion(): no lleva token y su 401 significa credenciales incorrectas
+    login: function (email, password) {
+      CARGA.inicio('Comprobando…');
+      return fetch(CONFIG.apiBase + CONFIG.rutas.login, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password })
+      }).finally(CARGA.fin).then(function (res) {
+        return res.text().then(function (txt) {
+          var d = null;
+          try { d = txt ? JSON.parse(txt) : null; } catch (e) { d = null; }
+          if (Array.isArray(d)) d = d[0];
+          if (res.status === 401) throw new Error('Email o contraseña incorrectos.');
+          if (!res.ok || !d || !d.token) throw new Error((d && (d.mensaje || d.message)) || ('Error ' + res.status + ' del servidor'));
+          return d;
+        });
+      });
     }
   };
 })();
@@ -2193,8 +2301,75 @@ function showToast(msg) {
   toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3500);
 }
 
+/* ════════ LOGIN Y SESIÓN ════════ */
+var appIniciada = false;
+var vigilanteSesion = null;
+
+function mostrarLogin(aviso) {
+  document.body.classList.add('sin-sesion');
+  var a = document.getElementById('loginAviso');
+  a.textContent = aviso || '';
+  a.classList.toggle('show', !!aviso);
+  ocultarError('loginError');
+  document.getElementById('loginPassword').value = '';
+  setTimeout(function () {
+    var e = document.getElementById('loginEmail');
+    (e.value ? document.getElementById('loginPassword') : e).focus();
+  }, 50);
+}
+
+function enviarLogin(ev) {
+  ev.preventDefault();
+  ocultarError('loginError');
+  var email = document.getElementById('loginEmail').value.trim();
+  var password = document.getElementById('loginPassword').value;
+  if (!email || !password) return mostrarError('loginError', 'Escribe tu email y tu contraseña.');
+  var boton = document.getElementById('loginBoton');
+  boton.disabled = true;
+  API.login(email, password).then(function (d) {
+    SESION.guardar(d);
+    document.getElementById('loginPassword').value = '';
+    entrarEnApp();
+  }).catch(function (e) {
+    mostrarError('loginError', e.message);
+    document.getElementById('loginPassword').value = '';
+  }).finally(function () { boton.disabled = false; });
+}
+
+function entrarEnApp() {
+  var s = SESION.cargar() || {};
+  document.getElementById('sesionNombre').textContent = s.nombre || s.email || '';
+  document.getElementById('sesionRol').textContent = s.rol || '';
+  document.body.classList.remove('sin-sesion');
+  clearInterval(vigilanteSesion);
+  vigilanteSesion = setInterval(function () {
+    if (!SESION.valida()) sesionCaducada();
+  }, 60000);
+  if (!appIniciada) { iniciarApp(); }
+  else { showPage(paginaActual || 'dashboard'); }
+}
+
+function cerrarSesion() {
+  SESION.borrar();
+  clearInterval(vigilanteSesion);
+  closeSidebar();
+  document.querySelectorAll('.modal-backdrop.show').forEach(function (m) { m.classList.remove('show'); });
+  mostrarLogin('');
+}
+
+function sesionCaducada() {
+  if (document.body.classList.contains('sin-sesion')) return;
+  SESION.borrar();
+  clearInterval(vigilanteSesion);
+  closeSidebar();
+  document.querySelectorAll('.modal-backdrop.show').forEach(function (m) { m.classList.remove('show'); });
+  mostrarLogin('Tu sesión ha caducado. Vuelve a entrar.');
+}
+
 /* ════════ INICIO ════════ */
+function iniciarApp() {
 API.dropdowns().then(function (d) {
+  appIniciada = true;
   CATALOGO = d;
   opcionesEdificios('edificioSelect', false);
   opcionesEdificios('tabEdificio', false);
@@ -2210,6 +2385,10 @@ API.dropdowns().then(function (d) {
   renderDashboard();
   if (!guiaYaVista()) abrirGuia();
 }).catch(mostrarErrorGeneral);
+}
+
+if (SESION.valida()) entrarEnApp();
+else { SESION.borrar(); mostrarLogin(''); }
 </script>
 </body>
 </html>
